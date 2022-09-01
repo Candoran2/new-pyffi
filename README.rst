@@ -1,0 +1,1 @@
+Source code for use by ``codegen.py`` from `cobra-tools <https://github.com/OpenNaja/cobra-tools>`_ to generate a library that can read and write nifs.
