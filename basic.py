@@ -136,7 +136,7 @@ Int = ve_class_from_struct(Struct("<i"), lambda value: (int(value) + 2147483648)
 Ushort = ve_class_from_struct(Struct("<H"), lambda value: int(value) % 65536)
 Short = ve_class_from_struct(Struct("<h"), lambda value: (int(value) + 32768) % 65536 - 32768)
 Byte = basic.Byte
-FileVersion = Uint
+FileVersion = Ulittle32
 Float = ve_class_from_struct(Struct("<f"), float)
 Hfloat = ve_class_from_struct(Struct("<e"), float)
 
@@ -319,4 +319,4 @@ class Ref(Int):
 StringOffset = Uint #although a different class, no different (except not countable)
 NiFixedString = Uint #same considerations as StringOffset
 
-switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, FileVersion, Float, Hfloat, BlockTypeIndex, Bool, Ptr, Ref, StringOffset, NiFixedString]
+switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, Float, Hfloat, BlockTypeIndex, Bool, Ptr, Ref, StringOffset, NiFixedString]
