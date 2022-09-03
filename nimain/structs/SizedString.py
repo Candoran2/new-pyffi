@@ -4,7 +4,7 @@ class SizedString:
 
 # START_CLASS
 
-	def __new_(self, context, arg=0, template=None, set_default=True):
+	def __new__(self, context, arg=0, template=None, set_default=True):
 		return ''
 
 	@staticmethod
