@@ -3,11 +3,11 @@ from io import BytesIO
 import logging
 import os
 
-from generated.formats.nif.basic import Uint, switchable_endianness
+from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness
 from generated.formats.nif.nimain.niobjects.NiObject import NiObject
-from generated.formats.nif.nimain.structs.SizedString import SizedString
 from generated.formats.nif.nimain.structs.Header import Header
 from generated.formats.nif.nimain.structs.Footer import Footer
+from generated.formats.nif.nimain.structs.SizedString import SizedString
 
 
 def create_niobject_map():
@@ -151,7 +151,16 @@ class NifFile(Header):
 
 	@classmethod
 	def read_fields(cls, stream, instance):
-		super().read_fields(stream, instance)
+		for field_name, field_type, arguments, (optional, default) in cls._get_filtered_attribute_list(instance):
+			field_value = field_type.from_stream(stream, instance.context, *arguments[2:], *arguments[:2])
+			setattr(instance, field_name, field_value)
+			if field_name == "header_string":
+				ver, modification = HeaderString.version_modification_from_headerstring(field_value)
+				instance.version = ver
+				instance.modification = modification
+			elif field_name == "endian_type":
+				# update every basic - we now know the endianness and the version
+				[basic.update_struct(instance) for basic in switchable_endianness]
 
 	@classmethod
 	def write_fields(cls, stream, instance):
@@ -166,8 +175,6 @@ class NifFile(Header):
 		cls.read_fields(stream, instance)
 		logger.debug(f"Version {instance.version}")
 		instance.io_size = stream.tell() - instance.io_start
-		# update every basic - should actually happend directly after endianness reading
-		[basic.update_struct(instance) for basic in switchable_endianness]
 		# read the separete NiObjects to build the block list
 		instance.read_blocks(stream)
 		# resolve references (Refs and Pointers) using the block list

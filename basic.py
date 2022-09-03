@@ -228,15 +228,6 @@ class HeaderString(LineString):
 
 	MAX_LEN = 64
 
-	@classmethod
-	def from_stream(cls, stream, context=None, arg=0, template=None):
-		string = super(HeaderString, HeaderString).from_stream(stream, context, arg, template)
-		if context:
-			ver, modification = cls.version_modification_from_headerstring(string)
-			context.version = ver
-			context.modification = modification
-		return string
-
 	@staticmethod
 	def version_modification_from_headerstring(s):
 		s = s.rstrip()
