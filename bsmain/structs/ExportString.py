@@ -24,3 +24,10 @@ class ExportString(BaseStruct):
 		length = len(instance)
 		Byte.to_stream(stream, length)
 		stream.write(instance.encode(errors="surrogateescape"))
+
+	@staticmethod
+	def get_field(instance, key):
+		if key == "length":
+			return len(instance)
+		elif key == "chars":
+			return instance

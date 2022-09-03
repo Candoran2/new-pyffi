@@ -17,3 +17,10 @@ class SizedString:
 	def to_stream(stream, instance):
 		Uint.to_stream(stream, len(instance))
 		stream.write(instance.encode(errors="surrogateescape"))
+
+	@staticmethod
+	def get_field(instance, key):
+		if key == "length":
+			return len(instance)
+		elif key == "chars":
+			return instance

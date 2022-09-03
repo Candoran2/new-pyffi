@@ -3,7 +3,7 @@ from io import BytesIO
 import logging
 import os
 
-from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness
+from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness, Ref, Ptr
 from generated.formats.nif.nimain.niobjects.NiObject import NiObject
 from generated.formats.nif.nimain.structs.Header import Header
 from generated.formats.nif.nimain.structs.Footer import Footer
@@ -149,10 +149,47 @@ class NifFile(Header):
 			for root in ftr.roots:
 				self.roots.append(self.blocks[root])
 
+	@staticmethod
+	def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=()):
+		for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4]):
+			if condition_function(attribute):
+				yield attribute
+
+	@classmethod
+	def get_condition_attributes_recursive(cls, struct_type, struct_instance, condition_function, arguments=()):
+		for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4]):
+			field_name, field_type, field_arguments = attribute[0:3]
+			if condition_function(attribute):
+				yield struct_type, struct_instance, attribute
+			if callable(getattr(field_type, "_get_filtered_attribute_list", None)):
+				yield from cls.get_condition_attributes_recursive(field_type,
+												   struct_type.get_field(struct_instance, field_name),
+												   condition_function,
+												   field_arguments)
+
+	def resolve_references(self):
+		# go through every NiObject (and the header and footer) and replace
+		# references and pointers with the actual object they're pointing to
+		is_ref = lambda attribute: issubclass(attribute[1], (Ref, Ptr))
+		for block in self.blocks:
+			for parent_type, parent_instance, attribute in self.get_condition_attributes_recursive(type(block), block, is_ref):
+				print(parent_type, attribute[0:2])
+				block_index = parent_type.get_field(parent_instance, attribute[0])
+				print(block_index, isinstance(block_index, int), type(block_index))
+				if isinstance(block_index, int):
+					print(f"can resolve ref {block_index} on {parent_type.__name__}")
+				if isinstance(block_index, int):
+					if block_index >= 0:
+						resolved_ref = self.blocks[block_index]
+					else:
+						resolved_ref = None
+					print(f"resolved ref {block_index} on {parent_type.__name__}")
+					parent_type.set_field(parent_instance, attribute[0], resolved_ref)
+
 	@classmethod
 	def read_fields(cls, stream, instance):
 		for field_name, field_type, arguments, (optional, default) in cls._get_filtered_attribute_list(instance):
-			field_value = field_type.from_stream(stream, instance.context, *arguments[2:], *arguments[:2])
+			field_value = field_type.from_stream(stream, instance.context, *arguments)
 			setattr(instance, field_name, field_value)
 			if field_name == "header_string":
 				ver, modification = HeaderString.version_modification_from_headerstring(field_value)
@@ -178,6 +215,7 @@ class NifFile(Header):
 		# read the separete NiObjects to build the block list
 		instance.read_blocks(stream)
 		# resolve references (Refs and Pointers) using the block list
+		instance.resolve_references()
 		# read the Footer
 		instance.read_footer(stream)
 		return instance

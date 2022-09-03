@@ -310,11 +310,19 @@ class HeaderString(LineString):
 			return "%s File Format, Version %s" % (s, v)
 
 class Ptr(Int):
-	pass
+	# remove the array writing functions, because otherwise you can't assign the resolved blocks
+	create_array = None
+	read_array = None
+	write_array = None
+
 
 
 class Ref(Int):
-	pass
+	# remove the array writing functions, because otherwise you can't assign the resolved blocks
+	create_array = None
+	read_array = None
+	write_array = None
+
 
 StringOffset = Uint #although a different class, no different (except not countable)
 NiFixedString = Uint #same considerations as StringOffset
