@@ -38,7 +38,23 @@ class NifError(Exception):
 
 
 class NifFile(Header):
+	"""A class to contain the actual nif data.
 
+	Note that {blocks} are not automatically kept
+	in sync with the rest of the nif data, but they are
+	resynchronized when calling L{write}.
+
+	:ivar version: The nif version.
+	:type version: int
+	:ivar user_version: The nif user version.
+	:type user_version: int
+	:ivar roots: List of root blocks.
+	:type roots: list[NiObject]
+	:ivar blocks: List of blocks.
+	:type blocks: list[NiObject]
+	:ivar modification: Neo Steam ("neosteam") or Ndoors ("ndoors") or Joymaster Interactive Howling Sword ("jmihs1") or Laxe Lore ("laxelore") style nif?
+	:type modification: str
+	"""
 	niobject_map = create_niobject_map()
 
 	def __init__(self, context=None, arg=0, template=None, set_default=True):
@@ -143,11 +159,11 @@ class NifFile(Header):
 		if stream.read(1):
 			logger.error('End of file not reached: corrupt NIF file?')
 
-		# fix links in blocks and footer (header has no links)
 		# add root objects in footer to roots list
 		if self.version >= 0x0303000D:
 			for root in ftr.roots:
-				self.roots.append(self.blocks[root])
+				if root >= 0:
+					self.roots.append(self.blocks[root])
 
 	@staticmethod
 	def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=()):
@@ -168,22 +184,17 @@ class NifFile(Header):
 												   field_arguments)
 
 	def resolve_references(self):
-		# go through every NiObject (and the header and footer) and replace
-		# references and pointers with the actual object they're pointing to
+		# go through every NiObject and replace references and pointers with the
+		# actual object they're pointing to
 		is_ref = lambda attribute: issubclass(attribute[1], (Ref, Ptr))
 		for block in self.blocks:
 			for parent_type, parent_instance, attribute in self.get_condition_attributes_recursive(type(block), block, is_ref):
-				print(parent_type, attribute[0:2])
 				block_index = parent_type.get_field(parent_instance, attribute[0])
-				print(block_index, isinstance(block_index, int), type(block_index))
-				if isinstance(block_index, int):
-					print(f"can resolve ref {block_index} on {parent_type.__name__}")
 				if isinstance(block_index, int):
 					if block_index >= 0:
 						resolved_ref = self.blocks[block_index]
 					else:
 						resolved_ref = None
-					print(f"resolved ref {block_index} on {parent_type.__name__}")
 					parent_type.set_field(parent_instance, attribute[0], resolved_ref)
 
 	@classmethod
