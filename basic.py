@@ -2,6 +2,7 @@ from ast import literal_eval
 import numpy as np
 from struct import Struct
 
+from generated.array import Array
 import generated.formats.base.basic as basic
 from generated.formats.nif.versions import version_from_str
 from generated.io import MAX_LEN
@@ -123,6 +124,13 @@ def ve_class_from_struct(le_struct, from_value_func):
 		def _to_xml_array(instance, elem, debug):
 			elem.text = " ".join([str(member) for member in instance.flat])
 
+		@staticmethod
+		def fmt_member(member, indent=0):
+			lines = str(member).split("\n")
+			lines_new = [lines[0], ] + ["\t" * indent + line for line in lines[1:]]
+			return "\n".join(lines_new)
+
+
 	ConstructedClass.set_struct(ConstructedClass._le_struct)
 
 	return ConstructedClass
@@ -155,6 +163,22 @@ class Char:
 	@classmethod
 	def to_stream(cls, stream, instance):
 		Byte.to_stream(stream, ord(instance))
+
+	@classmethod
+	def _get_filtered_attribute_list_array(cls, instance):
+		if isinstance(instance, str) or len(instance.shape) > 1:
+			# used string to represent 1D char array
+			for i in range(len(instance)):
+				yield (i, cls, (0, None), (False, None))
+		else:
+			for i in range(instance.shape[0]):
+				yield (i, Array, (0, None, instance.shape[1:], cls), (False, None))
+
+	@staticmethod
+	def fmt_member(member, indent=0):
+		lines = str(member).split("\n")
+		lines_new = [lines[0], ] + ["\t" * indent + line for line in lines[1:]]
+		return "\n".join(lines_new)
 
 BlockTypeIndex = Short # may need to inherit instead and be its own class
 
@@ -218,6 +242,11 @@ class LineString:
 	def from_value(value, context=None, arg=0, template=None):
 		return str(value)
 
+	@staticmethod
+	def fmt_member(member, indent=0):
+		lines = str(member).split("\n")
+		lines_new = [lines[0], ] + ["\t" * indent + line for line in lines[1:]]
+		return "\n".join(lines_new)
 
 class HeaderString(LineString):
 	"""
@@ -315,7 +344,9 @@ class Ptr(Int):
 	read_array = None
 	write_array = None
 
-
+	@staticmethod
+	def fmt_member(member, indent=0):
+		return f'{type(member).__name__} id: {id(member)}'
 
 class Ref(Int):
 	# remove the array writing functions, because otherwise you can't assign the resolved blocks
@@ -323,6 +354,9 @@ class Ref(Int):
 	read_array = None
 	write_array = None
 
+	@staticmethod
+	def fmt_member(member, indent=0):
+		return f'{type(member).__name__} id: {id(member)}'
 
 StringOffset = Uint #although a different class, no different (except not countable)
 NiFixedString = Uint #same considerations as StringOffset
