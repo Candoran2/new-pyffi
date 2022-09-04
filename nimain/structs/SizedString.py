@@ -4,7 +4,7 @@ class SizedString:
 
 # START_CLASS
 
-	def __new__(self, context, arg=0, template=None, set_default=True):
+	def __new__(self, context=None, arg=0, template=None, set_default=True):
 		return ''
 
 	@staticmethod
@@ -18,15 +18,9 @@ class SizedString:
 		Uint.to_stream(stream, len(instance))
 		stream.write(instance.encode(errors="surrogateescape"))
 
-	@staticmethod
-	def get_field(instance, key):
-		if key == "length":
-			return len(instance)
-		elif key == "chars":
-			return instance
+	get_field = None
+	_get_filtered_attribute_list = None
 
-	@classmethod
-	def _get_filtered_attribute_list(cls, instance):
-		yield from super()._get_filtered_attribute_list(instance)
-		yield 'length', Uint, (0, None), (False, None)
-		yield 'value', Array, (0, None, (cls.get_field(instance, 'length')), Char), (False, None)
+	@staticmethod
+	def fmt_member(instance, indent=0):
+		return repr(instance)

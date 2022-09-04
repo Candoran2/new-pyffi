@@ -359,6 +359,33 @@ class Ref(Int):
 		return f'{type(member).__name__} id: {id(member)}'
 
 StringOffset = Uint #although a different class, no different (except not countable)
-NiFixedString = Uint #same considerations as StringOffset
+class NiFixedString:
 
-switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, Float, Hfloat, BlockTypeIndex, Bool, Ptr, Ref, StringOffset, NiFixedString]
+	def __new__(self, context, arg=0, template=None, set_default=True):
+		return ''
+
+	@staticmethod
+	def from_stream(stream, context=None, arg=0, template=None):
+		index = Int.from_stream(stream, context, arg, template)
+		if index == -1:
+			return ''
+		else:
+			try:
+				return context.strings[index]
+			except IndexError:
+				raise ValueError(f'string index too large ({index})')
+
+	@staticmethod
+	def to_stream(stream, instance):
+		index = -1
+		for i, string in enumerate(stream.context.strings):
+			if instance == string:
+				index = i
+				break
+		Int.to_stream(stream, index)
+
+	@staticmethod
+	def fmt_member(instance, indent=0):
+		return repr(instance)
+
+switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, Float, Hfloat, BlockTypeIndex, Bool, Ptr, Ref, StringOffset]
