@@ -4,10 +4,15 @@ import logging
 import os
 
 from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness, Ref, Ptr
+from generated.formats.nif.bshavok.niobjects.BhkConstraint import BhkConstraint
+from generated.formats.nif.bshavok.niobjects.BhkRefObject import BhkRefObject
+from generated.formats.nif.enums.DataStreamUsage import DataStreamUsage
+from generated.formats.nif.bitflagss.DataStreamAccess import DataStreamAccess
 from generated.formats.nif.nimain.niobjects.NiObject import NiObject
 from generated.formats.nif.nimain.structs.Header import Header
 from generated.formats.nif.nimain.structs.Footer import Footer
 from generated.formats.nif.nimain.structs.SizedString import SizedString
+from generated.formats.nif.nimain.structs.String import String
 
 
 def create_niobject_map():
@@ -130,8 +135,8 @@ class NifFile(Header):
 				raise
 			# complete NiDataStream data
 			if block_type == "NiDataStream":
-				block.usage = data_stream_usage
-				block.access.populate_attribute_values(data_stream_access, self)
+				block.usage = DataStreamUsage.from_value(data_stream_usage)
+				block.access = DataStreamAccess.from_value(data_stream_access)
 			self.blocks.append(block)
 			# check block size
 			if self.version > 0x14020007:
@@ -183,6 +188,45 @@ class NifFile(Header):
 												   condition_function,
 												   field_arguments)
 
+	@classmethod
+	def get_links(cls, instance):
+		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, lambda x: issubclass(x[1], (Ref, Ptr))):
+			val = s_type.get_field(s_inst, f_name)
+			if val is not None:
+				yield val
+
+	def get_strings(cls, instance):
+		"""Get all strings in the structure."""
+		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, lambda x: issubclass(x[1], String)):
+			yield s_type.get_field(s_inst, f_name)
+
+	@classmethod
+	def get_refs(cls, instance):
+		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, lambda x: issubclass(x[1], Ref)):
+			val = s_type.get_field(s_inst, f_name)
+			if val is not None:
+				yield val
+
+	@classmethod
+	def tree(cls, instance, block_type=None, follow_all=True, unique=False):
+		# unique blocks: reduce this to the case of non-unique blocks
+		if unique:
+			block_list = []
+			for block in cls.tree(instance, block_type=block_type, follow_all=follow_all, unique=False):
+				if not block in block_list:
+					yield block
+					block_list.append(block)
+		# yield instance
+		if not block_type:
+			yield instance
+		elif isinstance(instance, block_type):
+			yield instance
+		elif not follow_all:
+			return
+		for child in cls.get_refs(instance):
+			for block in cls.tree(child, block_type=block_type, follow_all=follow_all):
+				yield block
+
 	def resolve_references(self):
 		# go through every NiObject and replace references and pointers with the
 		# actual object they're pointing to
@@ -196,6 +240,78 @@ class NifFile(Header):
 					else:
 						resolved_ref = None
 					parent_type.set_field(parent_instance, attribute[0], resolved_ref)
+
+	def _makeBlockList(self, root, block_index_dct, block_type_list, block_type_dct):
+		"""This is a helper function for write to set up the list of all blocks,
+		the block index map, and the block type map.
+
+		:param root: The root block, whose tree is to be added to
+			the block list.
+		:type root: L{NifFormat.NiObject}
+		:param block_index_dct: Dictionary mapping blocks in self.blocks to
+			their block index.
+		:type block_index_dct: dict
+		:param block_type_list: List of all block types.
+		:type block_type_list: list of str
+		:param block_type_dct: Dictionary mapping blocks in self.blocks to
+			their block type index.
+		:type block_type_dct: dict
+		"""
+		def _blockChildBeforeParent(block):
+			"""Determine whether block comes before its parent or not, depending
+			on the block type.
+
+			@todo: Move to the L{NifFormat.Data} class.
+
+			:param block: The block to test.
+			:type block: L{NifFormat.NiObject}
+			:return: ``True`` if child should come first, ``False`` otherwise.
+			"""
+			return (isinstance(block, BhkRefObject)
+					and not isinstance(block, BhkConstraint))
+
+		# block already listed? if so, return
+		if root in self.blocks:
+			return
+
+		# add block type to block type dictionary
+		block_type = type(root).__name__
+		# special case: NiDataStream stores part of data in block type list
+		if block_type == "NiDataStream":
+			block_type = "NiDataStream\x01{int(root.usage)}\x01%{int(root.access)}"
+		try:
+			block_type_dct[root] = block_type_list.index(block_type)
+		except ValueError:
+			block_type_dct[root] = len(block_type_list)
+			block_type_list.append(block_type)
+
+		# special case: add bhkConstraint entities before bhkConstraint
+		# (these are actually links, not refs)
+		if isinstance(root, BhkConstraint):
+			for entity in root.entities:
+				if entity is not None:
+					self._makeBlockList(entity, block_index_dct, block_type_list, block_type_dct)
+
+		children_left = []
+		# add children that come before the block
+		# store any remaining children in children_left (processed later)
+		is_ref_condition = lambda attribute: issubclass(attribute[1], Ref)
+		for s_type, s_inst, (f_name, f_type, arguments, _) in self.get_condition_attributes_recursive(type(root), root, is_ref_condition):
+			child = s_type.get_field(s_inst, f_name)
+			if _blockChildBeforeParent(child):
+				self._makeBlockList(child, block_index_dct, block_type_list, block_type_dct)
+			else:
+				children_left.append(child)
+
+		# add the block
+		if self.version >= 0x030300D:
+			block_index_dct[root] = len(self.blocks)
+		else:
+			block_index_dct[root] = id(root)
+		self.blocks.append(root)
+
+		for child in children_left:
+			self._makeBlockList(child, block_index_dct, block_type_list, block_type_dct)
 
 	@classmethod
 	def read_fields(cls, stream, instance):
@@ -233,9 +349,21 @@ class NifFile(Header):
 
 	@classmethod
 	def to_stream(cls, stream, instance):
+		logger = logging.getLogger("generated.formats.nif")
 		# the context (i.e. the file) is stored on the stream
 		stream.context = instance
+		# set up index and type dictionary
+		instance.blocks = [] # list of all blocks to be written
+		instance._block_index_dct = {} # maps block to block index
+		block_type_list = [] # list of all block type strings
+		block_type_dct = {} # maps block to block type string index
+		instance._string_list = []
 		# create/update the block list before anything else
+		for root in instance.roots:
+			instance._makeBlockList(root, instance._block_index_dct, block_type_list, block_type_dct)
+			for block in cls.tree(root):
+				instance._string_list.extend()
+
 		# update the reverse map to allow for writing
 		instance.io_start = stream.tell()
 		cls.write_fields(stream, instance)
