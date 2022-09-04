@@ -24,3 +24,9 @@ class SizedString16:
 			return len(instance)
 		elif key == "chars":
 			return instance
+
+	@classmethod
+	def _get_filtered_attribute_list(cls, instance):
+		yield from super()._get_filtered_attribute_list(instance)
+		yield 'length', Uint, (0, None), (False, None)
+		yield 'value', Array, (0, None, (cls.get_field(instance, 'length')), Char), (False, None)
