@@ -3,7 +3,7 @@ from io import BytesIO
 import logging
 import os
 
-from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness, Ref, Ptr
+from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString
 from generated.formats.nif.bshavok.niobjects.BhkConstraint import BhkConstraint
 from generated.formats.nif.bshavok.niobjects.BhkRefObject import BhkRefObject
 from generated.formats.nif.enums.DataStreamUsage import DataStreamUsage
@@ -84,6 +84,8 @@ class NifFile(Header):
 					is_root = False
 					stream.seek(pos)
 			else:
+				if block_num >= self.num_blocks:
+					break
 				# signal as no root for now, roots are added when the footer
 				# is read
 				is_root = False
@@ -153,9 +155,6 @@ class NifFile(Header):
 				self.roots.append(block)
 			# check if we are done
 			block_num += 1
-			if self.version >= 0x0303000D:
-				if block_num >= self.num_blocks:
-					break
 
 	def read_footer(self, stream):
 		logger = logging.getLogger("generated.formats.nif")
@@ -169,6 +168,7 @@ class NifFile(Header):
 			for root in ftr.roots:
 				if root >= 0:
 					self.roots.append(self.blocks[root])
+		self.footer = ftr
 
 	@staticmethod
 	def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=()):
@@ -189,21 +189,30 @@ class NifFile(Header):
 												   field_arguments)
 
 	@classmethod
-	def get_links(cls, instance):
-		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, lambda x: issubclass(x[1], (Ref, Ptr))):
+	def get_condition_values_recursive(cls, instance, condition_function, arguments=()):
+		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, condition_function, arguments):
 			val = s_type.get_field(s_inst, f_name)
+			yield val
+
+	@classmethod
+	def get_links(cls, instance):
+		condition_function = lambda x: issubclass(x[1], (Ref, Ptr))
+		for val in cls.get_condition_values_recursive(instance, condition_function):
+			if val:
+				yield val
+
+	@classmethod
+	def get_strings(cls, instance):
+		"""Get all strings in the structure."""
+		condition_function = lambda x: issubclass(x[1], (String, NiFixedString))
+		for val in cls.get_condition_values_recursive(instance, condition_function):
 			if val is not None:
 				yield val
 
-	def get_strings(cls, instance):
-		"""Get all strings in the structure."""
-		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, lambda x: issubclass(x[1], String)):
-			yield s_type.get_field(s_inst, f_name)
-
 	@classmethod
 	def get_refs(cls, instance):
-		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, lambda x: issubclass(x[1], Ref)):
-			val = s_type.get_field(s_inst, f_name)
+		condition_function = lambda x: issubclass(x[1], Ref)
+		for val in cls.get_condition_values_recursive(instance, condition_function):
 			if val is not None:
 				yield val
 
@@ -295,9 +304,7 @@ class NifFile(Header):
 		children_left = []
 		# add children that come before the block
 		# store any remaining children in children_left (processed later)
-		is_ref_condition = lambda attribute: issubclass(attribute[1], Ref)
-		for s_type, s_inst, (f_name, f_type, arguments, _) in self.get_condition_attributes_recursive(type(root), root, is_ref_condition):
-			child = s_type.get_field(s_inst, f_name)
+		for child in self.get_refs(root):
 			if _blockChildBeforeParent(child):
 				self._makeBlockList(child, block_index_dct, block_type_list, block_type_dct)
 			else:
@@ -362,13 +369,53 @@ class NifFile(Header):
 		for root in instance.roots:
 			instance._makeBlockList(root, instance._block_index_dct, block_type_list, block_type_dct)
 			for block in cls.tree(root):
-				instance._string_list.extend()
+				instance._string_list.extend(cls.get_strings(block))
+		instance._string_list = list(set(instance._string_list))  # ensure unique elements
 
-		# update the reverse map to allow for writing
+		instance.num_blocks = len(instance.blocks)
+		instance.num_block_types = len(block_type_list)
+		instance.block_types[:] = block_type_list
+		instance.block_type_index[:] = [block_type_dct[block] for block in instance.blocks]
+		instance.num_strings = len(instance._string_list)
+		if instance._string_list:
+			instance.max_string_length = max([len(s) for s in instance._string_list])
+		else:
+			instance.max_string_length = 0
+		instance.strings[:] = instance._string_list
+		instance.block_size[:] = [type(block).get_size(instance, block) for block in instance.blocks]
+
+		# write the header (instance)
+		logger.debug("Writing header")
 		instance.io_start = stream.tell()
 		cls.write_fields(stream, instance)
 		instance.io_size = stream.tell() - instance.io_start
+
+		# write the blocks
+		for block in instance.blocks:
+			# signal top level object if block is a root object
+			if instance.version < 0x0303000D and block in instance.roots:
+				SizedString.to_stream(stream, "Top Level Object")
+			if instance.version >= 0x05000001:
+				if instance.version <= 0x0A01006A:
+					# write zero dummy separator
+					Uint.to_stream(stream, 0)
+			else:
+				# write block type string
+				assert(block_type_list[block_type_dct[block]] == type(block).__name__)
+				SizedString.to_stream(stream, type(block).__name__)
+			# write block index
+			logger.debug(f"Writing {type(block).__name__} block")
+			if instance.version < 0x0303000D:
+				Uint.to_stream(stream, instance._block_index_dct[block]) # original pyffi code had Int
+			# write block
+			type(block).to_stream(stream, block)
+		if instance.version < 0x0303000D:
+			SizedString.to_stream(stream, "End Of File")
+
 		# write the Footer
+		ftr = instance.footer
+		ftr.num_roots = len(instance.roots)
+		ftr.roots[:] = instance.roots
 		Footer.to_stream(stream, instance.footer)
 		return instance
 

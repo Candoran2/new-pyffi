@@ -52,6 +52,10 @@ def ve_class_from_struct(le_struct, from_value_func):
 			stream.write(cls.pack(instance))
 
 		@classmethod
+		def get_size(cls, context, instance, arguments=()):
+			return cls.size
+
+		@classmethod
 		def create_array(cls, shape, default=None, context=None, arg=0, template=None):
 			if default:
 				return np.full(shape, default, cls.dtype)
@@ -164,6 +168,10 @@ class Char:
 	def to_stream(cls, stream, instance):
 		Byte.to_stream(stream, ord(instance))
 
+	@staticmethod
+	def get_size(context, instance, arguments=()):
+		return 1
+
 	@classmethod
 	def _get_filtered_attribute_list_array(cls, instance):
 		if isinstance(instance, str) or len(instance.shape) > 1:
@@ -223,6 +231,7 @@ class LineString:
 
 	@classmethod
 	def from_stream(cls, stream, context=None, arg=0, template=None):
+		"""The returned string does not include the newline."""
 		val = stream.readline(cls.MAX_LEN)
 		if val[-1:] != b'\n':
 			if len(val) == cls.MAX_LEN:
@@ -237,6 +246,10 @@ class LineString:
 	def to_stream(stream, instance):
 		stream.write(instance.encode(errors="surrogateescape"))
 		stream.write(b'\x0A')
+
+	@staticmethod
+	def get_size(context, instance, arguments=()):
+		return len(instance.encode(errors="surrogateescape")) + 1
 
 	@staticmethod
 	def from_value(value, context=None, arg=0, template=None):
@@ -344,6 +357,14 @@ class Ptr(Int):
 	read_array = None
 	write_array = None
 
+	@classmethod
+	def to_stream(cls, stream, instance):
+		if instance is None:
+			index = -1
+		else:
+			index = stream.context._block_index_dct[instance]
+		super().to_stream(stream, index)
+
 	@staticmethod
 	def fmt_member(member, indent=0):
 		return f'{type(member).__name__} id: {id(member)}'
@@ -353,6 +374,14 @@ class Ref(Int):
 	create_array = None
 	read_array = None
 	write_array = None
+
+	@classmethod
+	def to_stream(cls, stream, instance):
+		if instance is None:
+			index = -1
+		else:
+			index = stream.context._block_index_dct[instance]
+		super().to_stream(stream, index)
 
 	@staticmethod
 	def fmt_member(member, indent=0):
@@ -383,6 +412,10 @@ class NiFixedString:
 				index = i
 				break
 		Int.to_stream(stream, index)
+
+	@staticmethod
+	def get_size(context, instance, arguments=()):
+		return 4
 
 	@staticmethod
 	def fmt_member(instance, indent=0):

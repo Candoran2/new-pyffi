@@ -18,6 +18,10 @@ class SizedString16:
 		Ushort.to_stream(stream, len(instance))
 		stream.write(instance.encode(errors="surrogateescape"))
 
+	@staticmethod
+	def get_size(context, instance, arguments=()):
+		return Ushort.get_size(context, instance) + len(instance.encode(errors="surrogateescape"))
+
 	get_field = None
 	_get_filtered_attribute_list = None
 

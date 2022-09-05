@@ -26,6 +26,10 @@ class ExportString(BaseStruct):
 		stream.write(instance.encode(errors="surrogateescape"))
 
 	@staticmethod
+	def get_size(context, instance, arguments=()):
+		return Byte.get_size(context, instance) + len(instance.encode(errors="surrogateescape"))
+
+	@staticmethod
 	def get_field(instance, key):
 		if key == "length":
 			return len(instance)

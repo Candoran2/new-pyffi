@@ -22,6 +22,13 @@ class String:
 		if stream.context.version >= 335609859:
 			NiFixedString.to_stream(stream, instance)
 
+	@staticmethod
+	def get_size(context, instance, arguments=()):
+		if context.version <= 335544325:
+			return SizedString.get_size(context, instance)
+		if context.version >= 335609859:
+			return NiFixedString.get_size(context, instance)
+
 	get_field = None
 	_get_filtered_attribute_list = None
 
