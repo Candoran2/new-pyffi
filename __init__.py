@@ -198,7 +198,7 @@ class NifFile(Header):
 	def get_links(cls, instance):
 		condition_function = lambda x: issubclass(x[1], (Ref, Ptr))
 		for val in cls.get_condition_values_recursive(instance, condition_function):
-			if val:
+			if val is not None:
 				yield val
 
 	@classmethod
@@ -206,7 +206,7 @@ class NifFile(Header):
 		"""Get all strings in the structure."""
 		condition_function = lambda x: issubclass(x[1], (String, NiFixedString))
 		for val in cls.get_condition_values_recursive(instance, condition_function):
-			if val is not None:
+			if val:
 				yield val
 
 	@classmethod
