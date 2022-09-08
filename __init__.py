@@ -171,14 +171,14 @@ class NifFile(Header):
 		self.footer = ftr
 
 	@staticmethod
-	def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=()):
-		for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4]):
+	def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
+		for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
 			if condition_function(attribute):
 				yield attribute
 
 	@classmethod
-	def get_condition_attributes_recursive(cls, struct_type, struct_instance, condition_function, arguments=()):
-		for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4]):
+	def get_condition_attributes_recursive(cls, struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
+		for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
 			field_name, field_type, field_arguments = attribute[0:3]
 			if condition_function(attribute):
 				yield struct_type, struct_instance, attribute
@@ -186,11 +186,12 @@ class NifFile(Header):
 				yield from cls.get_condition_attributes_recursive(field_type,
 												   struct_type.get_field(struct_instance, field_name),
 												   condition_function,
-												   field_arguments)
+												   field_arguments,
+												   include_abstract)
 
 	@classmethod
-	def get_condition_values_recursive(cls, instance, condition_function, arguments=()):
-		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, condition_function, arguments):
+	def get_condition_values_recursive(cls, instance, condition_function, arguments=(), include_abstract=True):
+		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, condition_function, arguments, include_abstract):
 			val = s_type.get_field(s_inst, f_name)
 			yield val
 
@@ -322,7 +323,7 @@ class NifFile(Header):
 
 	@classmethod
 	def read_fields(cls, stream, instance):
-		for field_name, field_type, arguments, (optional, default) in cls._get_filtered_attribute_list(instance):
+		for field_name, field_type, arguments, (optional, default) in cls._get_filtered_attribute_list(instance, include_abstract=False):
 			field_value = field_type.from_stream(stream, instance.context, *arguments)
 			setattr(instance, field_name, field_value)
 			if field_name == "header_string":
