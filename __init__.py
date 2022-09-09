@@ -6,6 +6,7 @@ import os
 from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString
 from generated.formats.nif.bshavok.niobjects.BhkConstraint import BhkConstraint
 from generated.formats.nif.bshavok.niobjects.BhkRefObject import BhkRefObject
+from generated.formats.nif.bsmain.structs.BSStreamHeader import BSStreamHeader
 from generated.formats.nif.enums.DataStreamUsage import DataStreamUsage
 from generated.formats.nif.bitflagss.DataStreamAccess import DataStreamAccess
 from generated.formats.nif.nimain.niobjects.NiObject import NiObject
@@ -63,10 +64,40 @@ class NifFile(Header):
 	niobject_map = create_niobject_map()
 
 	def __init__(self, context=None, arg=0, template=None, set_default=True):
-		self.version = 0
 		# user version and bs version will be set by init
 		# use self as context
 		super().__init__(self, arg, template, set_default=set_default)
+		self.roots = []
+		self.blocks = []
+		self.modification = None
+
+	@classmethod
+	def from_version(cls, version=0x04000002, user_version=0, user_version_2=0):
+		"""Initialize nif data. By default, this creates an empty
+		nif document of the given version and user version.
+
+		:param version: The version.
+		:type version: int
+		:param user_version: The user version.
+		:type user_version: int
+		"""
+		instance = cls()
+		instance.version = version
+		instance.user_version = user_version
+		for f_name, f_type, arguments, (optional, default) in cls._get_filtered_attribute_list(instance):
+			if f_name == "version":
+				continue
+			elif f_name == "user_version":
+				continue
+			elif f_name == "bs_header":
+				field_value = BSStreamHeader.from_bs_version(instance, user_version_2)
+			else:
+				if default is None:
+					field_value = f_type(instance, *arguments)
+				else:
+					field_value = f_type.from_value(*arguments[2:4], default)
+			setattr(instance, f_name, field_value)
+		return instance
 
 	def read_blocks(self, stream):
 		logger = logging.getLogger("generated.formats.nif")
@@ -168,7 +199,6 @@ class NifFile(Header):
 			for root in ftr.roots:
 				if root >= 0:
 					self.roots.append(self.blocks[root])
-		self.footer = ftr
 
 	@staticmethod
 	def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
@@ -385,6 +415,8 @@ class NifFile(Header):
 		instance.strings[:] = instance._string_list
 		instance.block_size[:] = [type(block).get_size(instance, block) for block in instance.blocks]
 
+		# update the basics before doing any writing
+		[basic.update_struct(instance) for basic in switchable_endianness]
 		# write the header (instance)
 		logger.debug("Writing header")
 		instance.io_start = stream.tell()
@@ -414,10 +446,10 @@ class NifFile(Header):
 			SizedString.to_stream(stream, "End Of File")
 
 		# write the Footer
-		ftr = instance.footer
+		ftr = Footer(instance)
 		ftr.num_roots = len(instance.roots)
 		ftr.roots[:] = instance.roots
-		Footer.to_stream(stream, instance.footer)
+		Footer.to_stream(stream, ftr)
 		return instance
 
 	@classmethod
