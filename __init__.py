@@ -241,6 +241,20 @@ class NifFile(Header):
 				yield val
 
 	@classmethod
+	def get_recursive_strings(cls, instance):
+		"""Get all strings in the entire tree"""
+		condition_function = lambda x: issubclass(x[1], (String, NiFixedString, Ref))
+		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, condition_function):
+			value = s_type.get_field(s_inst, f_name)
+			if issubclass(f_type, Ref):
+				if value is not None:
+					yield from cls.get_recursive_strings(value)
+			else:
+				# must be a string type
+				if value:
+					yield value
+
+	@classmethod
 	def get_refs(cls, instance):
 		condition_function = lambda x: issubclass(x[1], Ref)
 		for val in cls.get_condition_values_recursive(instance, condition_function):
@@ -318,7 +332,7 @@ class NifFile(Header):
 		block_type = type(root).__name__
 		# special case: NiDataStream stores part of data in block type list
 		if block_type == "NiDataStream":
-			block_type = "NiDataStream\x01{int(root.usage)}\x01%{int(root.access)}"
+			block_type = f"NiDataStream\x01{int(root.usage)}\x01{int(root.access)}"
 		try:
 			block_type_dct[root] = block_type_list.index(block_type)
 		except ValueError:
@@ -399,9 +413,12 @@ class NifFile(Header):
 		# create/update the block list before anything else
 		for root in instance.roots:
 			instance._makeBlockList(root, instance._block_index_dct, block_type_list, block_type_dct)
-			for block in cls.tree(root):
-				instance._string_list.extend(cls.get_strings(block))
-		instance._string_list = list(set(instance._string_list))  # ensure unique elements
+			instance._string_list.extend(cls.get_recursive_strings(root))
+# 			recursive strings (at least for test maplestory 2 (30.2.0.3) nif) is more true to base game order
+# 			than get_strings per block
+# 			for block in cls.tree(root):
+# 				instance._string_list.extend(cls.get_strings(block))
+		instance._string_list = list({string: None for string in instance._string_list})  # ensure unique elements
 
 		instance.num_blocks = len(instance.blocks)
 		instance.num_block_types = len(block_type_list)
