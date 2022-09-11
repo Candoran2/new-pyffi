@@ -36,6 +36,7 @@ def create_niobject_map():
 						niobject_map[value.__name__] = value
 	return niobject_map
 
+EPSILON
 
 # exceptions
 class NifError(Exception):
