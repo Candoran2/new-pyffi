@@ -46,7 +46,7 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 import collections
 from functools import reduce
 
-from pyffi.utils.tristrip import OrientedStrip
+from generated.utils.tristrip import OrientedStrip
 
 class VertexScore:
     """Vertex score calculation."""

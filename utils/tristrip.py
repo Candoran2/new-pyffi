@@ -43,8 +43,8 @@ try:
     import pytristrip
 except ImportError:
     pytristrip = None
-    from pyffi.utils.trianglestripifier import TriangleStripifier
-    from pyffi.utils.trianglemesh import Mesh
+    from generated.utils.trianglestripifier import TriangleStripifier
+    from generated.utils.trianglemesh import Mesh
 
 def triangulate(strips):
     """A generator for iterating over the faces in a set of

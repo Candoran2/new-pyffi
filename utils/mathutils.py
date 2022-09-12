@@ -54,28 +54,28 @@ def float_to_int(value):
     >>> float_to_int(-0.6)
     -1
     >>> float_to_int(float('inf'))
-    pyffi.utils.mathutils:WARNING:float_to_int converted +inf to +2147483648.
+    generated.utils.mathutils:WARNING:float_to_int converted +inf to +2147483648.
     2147483648
     >>> float_to_int(-float('inf'))
-    pyffi.utils.mathutils:WARNING:float_to_int converted -inf to -2147483648.
+    generated.utils.mathutils:WARNING:float_to_int converted -inf to -2147483648.
     -2147483648
     >>> float_to_int(float('nan'))
-    pyffi.utils.mathutils:WARNING:float_to_int converted nan to 0.
+    generated.utils.mathutils:WARNING:float_to_int converted nan to 0.
     0
     """
     try:
         return int(value + 0.5 if value > 0 else value - 0.5)
     except ValueError:
-        logging.getLogger("pyffi.utils.mathutils").warn(
+        logging.getLogger("generated.utils.mathutils").warn(
             "float_to_int converted nan to 0.")
         return 0
     except OverflowError:
         if value > 0:
-            logging.getLogger("pyffi.utils.mathutils").warn(
+            logging.getLogger("generated.utils.mathutils").warn(
                 "float_to_int converted +inf to +2147483648.")
             return 2147483648
         else:
-            logging.getLogger("pyffi.utils.mathutils").warn(
+            logging.getLogger("generated.utils.mathutils").warn(
                 "float_to_int converted -inf to -2147483648.")
             return -2147483648
 
