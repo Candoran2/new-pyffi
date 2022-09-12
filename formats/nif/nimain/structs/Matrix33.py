@@ -1,6 +1,8 @@
+# START_GLOBALS
 from generated.formats.nif import EPSILON
 from generated.formats.nif.nimain.structs.Quaternion import Quaternion
 from generated.formats.nif.nimain.structs.Vector3 import Vector3
+# END_GLOBALS
 
 
 class Matrix33:

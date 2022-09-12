@@ -1,9 +1,11 @@
+# START_GLOBALS
 import logging
 
 from generated.formats.nif import EPSILON
 from generated.formats.nif.nimain.structs.Matrix33 import Matrix33
 from generated.formats.nif.nimain.structs.Vector3 import Vector3
 from generated.formats.nif.nimain.structs.Vector4 import Vector4
+# END_GLOBALS
 
 class Matrix44:
 # START_CLASS

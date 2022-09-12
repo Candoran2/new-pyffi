@@ -1,8 +1,11 @@
+# START_GLOBALS
 import math
 
 from generated.formats.nif import EPSILON
 from generated.formats.nif.nimain.structs.Matrix33 import Matrix33
 from generated.formats.nif.nimain.structs.Matrix44 import Matrix44
+# END_GLOBALS
+
 
 class Vector3:
 # START_CLASS

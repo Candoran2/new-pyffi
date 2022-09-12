@@ -2,6 +2,7 @@ from importlib import import_module
 from io import BytesIO
 import logging
 import os
+import re
 
 from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString
 from generated.formats.nif.bshavok.niobjects.BhkConstraint import BhkConstraint
@@ -36,7 +37,21 @@ def create_niobject_map():
 						niobject_map[value.__name__] = value
 	return niobject_map
 
-EPSILON
+
+# filter for recognizing NIF files by extension
+# .kf are NIF files containing keyframes
+# .kfa are NIF files containing keyframes in DAoC style
+# .nifcache are Empire Earth II NIF files
+# .texcache are Empire Earth II/III packed texture NIF files
+# .pcpatch are Empire Earth II/III packed texture NIF files
+# .item are Divinity 2 NIF files
+# .nft are Bully SE NIF files (containing textures)
+# .nif_wii are Epic Mickey NIF files
+RE_FILENAME = re.compile(r'^.*\.(nif|kf|kfa|nifcache|jmi|texcache|pcpatch|nft|item|nif_wii)$', re.IGNORECASE)
+# archives
+ARCHIVE_CLASSES = [] # link to the actual bsa format once done
+# used for comparing floats
+EPSILON = 0.0001
 
 # exceptions
 class NifError(Exception):
