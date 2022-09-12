@@ -1,9 +1,7 @@
 # START_GLOBALS
 import logging
 
-from generated.formats.nif import EPSILON
-from generated.formats.nif.nimain.structs.Matrix33 import Matrix33
-from generated.formats.nif.nimain.structs.Vector3 import Vector3
+import generated.formats.nif as NifFormat
 from generated.formats.nif.nimain.structs.Vector4 import Vector4
 # END_GLOBALS
 
@@ -71,22 +69,22 @@ class Matrix44:
 
 	def is_identity(self):
 		"""Return ``True`` if the matrix is close to identity."""
-		if (abs(self.m_11 - 1.0) > EPSILON
-			or abs(self.m_12) > EPSILON
-			or abs(self.m_13) > EPSILON
-			or abs(self.m_14) > EPSILON
-			or abs(self.m_21) > EPSILON
-			or abs(self.m_22 - 1.0) > EPSILON
-			or abs(self.m_23) > EPSILON
-			or abs(self.m_24) > EPSILON
-			or abs(self.m_31) > EPSILON
-			or abs(self.m_32) > EPSILON
-			or abs(self.m_33 - 1.0) > EPSILON
-			or abs(self.m_34) > EPSILON
-			or abs(self.m_41) > EPSILON
-			or abs(self.m_42) > EPSILON
-			or abs(self.m_43) > EPSILON
-			or abs(self.m_44 - 1.0) > EPSILON):
+		if (abs(self.m_11 - 1.0) > NifFormat.EPSILON
+			or abs(self.m_12) > NifFormat.EPSILON
+			or abs(self.m_13) > NifFormat.EPSILON
+			or abs(self.m_14) > NifFormat.EPSILON
+			or abs(self.m_21) > NifFormat.EPSILON
+			or abs(self.m_22 - 1.0) > NifFormat.EPSILON
+			or abs(self.m_23) > NifFormat.EPSILON
+			or abs(self.m_24) > NifFormat.EPSILON
+			or abs(self.m_31) > NifFormat.EPSILON
+			or abs(self.m_32) > NifFormat.EPSILON
+			or abs(self.m_33 - 1.0) > NifFormat.EPSILON
+			or abs(self.m_34) > NifFormat.EPSILON
+			or abs(self.m_41) > NifFormat.EPSILON
+			or abs(self.m_42) > NifFormat.EPSILON
+			or abs(self.m_43) > NifFormat.EPSILON
+			or abs(self.m_44 - 1.0) > NifFormat.EPSILON):
 			return False
 		else:
 			return True
@@ -114,7 +112,7 @@ class Matrix44:
 
 	def get_matrix_33(self):
 		"""Returns upper left 3x3 part."""
-		m = Matrix33()
+		m = NifFormat.classes.Matrix33()
 		m.m_11 = self.m_11
 		m.m_12 = self.m_12
 		m.m_13 = self.m_13
@@ -128,7 +126,7 @@ class Matrix44:
 
 	def set_matrix_33(self, m):
 		"""Sets upper left 3x3 part."""
-		if not isinstance(m, Matrix33):
+		if not isinstance(m, NifFormat.classes.Matrix33):
 			raise TypeError('argument must be Matrix33')
 		self.m_11 = m.m_11
 		self.m_12 = m.m_12
@@ -142,7 +140,7 @@ class Matrix44:
 
 	def get_translation(self):
 		"""Returns lower left 1x3 part."""
-		t = Vector3()
+		t = NifFormat.classes.Vector3()
 		t.x = self.m_41
 		t.y = self.m_42
 		t.z = self.m_43
@@ -150,7 +148,7 @@ class Matrix44:
 
 	def set_translation(self, translation):
 		"""Returns lower left 1x3 part."""
-		if not isinstance(translation, Vector3):
+		if not isinstance(translation, NifFormat.classes.Vector3):
 			raise TypeError('argument must be Vector3')
 		self.m_41 = translation.x
 		self.m_42 = translation.y
@@ -158,10 +156,10 @@ class Matrix44:
 
 	def is_scale_rotation_translation(self):
 		if not self.get_matrix_33().is_scale_rotation(): return False
-		if abs(self.m_14) > EPSILON: return False
-		if abs(self.m_24) > EPSILON: return False
-		if abs(self.m_34) > EPSILON: return False
-		if abs(self.m_44 - 1.0) > EPSILON: return False
+		if abs(self.m_14) > NifFormat.EPSILON: return False
+		if abs(self.m_24) > NifFormat.EPSILON: return False
+		if abs(self.m_34) > NifFormat.EPSILON: return False
+		if abs(self.m_44 - 1.0) > NifFormat.EPSILON: return False
 		return True
 
 	def get_scale_rotation_translation(self):
@@ -180,15 +178,15 @@ class Matrix44:
 	def set_scale_rotation_translation(self, scale, rotation, translation):
 		if not isinstance(scale, (float, int)):
 			raise TypeError('scale must be float')
-		if not isinstance(rotation, Matrix33):
+		if not isinstance(rotation, NifFormat.classes.Matrix33):
 			raise TypeError('rotation must be Matrix33')
-		if not isinstance(translation, Vector3):
+		if not isinstance(translation, NifFormat.classes.Vector3):
 			raise TypeError('translation must be Vector3')
 
 		if not rotation.is_rotation():
 			logger = logging.getLogger("generated.formats.nif.nimain.struct.matrix44")
 			mat = rotation * rotation.get_transpose()
-			idmat = Matrix33()
+			idmat = NifFormat.classes.Matrix33()
 			idmat.set_identity()
 			error = (mat - idmat).sup_norm()
 			logger.warning("improper rotation matrix (error is %f)" % error)
@@ -247,7 +245,7 @@ class Matrix44:
 			m = self.as_list()
 			nn = [[0.0 for i in range(4)] for j in range(4)]
 			det = determinant(m)
-			if abs(det) < EPSILON:
+			if abs(det) < NifFormat.EPSILON:
 				raise ZeroDivisionError('cannot invert matrix:\n%s'%self)
 			for i in range(4):
 				for j in range(4):
@@ -279,7 +277,7 @@ class Matrix44:
 			m.m_43 = self.m_43 * x
 			m.m_44 = self.m_44 * x
 			return m
-		elif isinstance(x, Vector3):
+		elif isinstance(x, NifFormat.classes.Vector3):
 			raise TypeError("matrix*vector not supported; please use left multiplication (vector*matrix)")
 		elif isinstance(x, Vector4):
 			raise TypeError("matrix*vector not supported; please use left multiplication (vector*matrix)")
@@ -342,22 +340,22 @@ class Matrix44:
 			return False
 		if not isinstance(m, Matrix44):
 			raise TypeError("do not know how to compare Matrix44 and %s"%m.__class__)
-		if abs(self.m_11 - m.m_11) > EPSILON: return False
-		if abs(self.m_12 - m.m_12) > EPSILON: return False
-		if abs(self.m_13 - m.m_13) > EPSILON: return False
-		if abs(self.m_14 - m.m_14) > EPSILON: return False
-		if abs(self.m_21 - m.m_21) > EPSILON: return False
-		if abs(self.m_22 - m.m_22) > EPSILON: return False
-		if abs(self.m_23 - m.m_23) > EPSILON: return False
-		if abs(self.m_24 - m.m_24) > EPSILON: return False
-		if abs(self.m_31 - m.m_31) > EPSILON: return False
-		if abs(self.m_32 - m.m_32) > EPSILON: return False
-		if abs(self.m_33 - m.m_33) > EPSILON: return False
-		if abs(self.m_34 - m.m_34) > EPSILON: return False
-		if abs(self.m_41 - m.m_41) > EPSILON: return False
-		if abs(self.m_42 - m.m_42) > EPSILON: return False
-		if abs(self.m_43 - m.m_43) > EPSILON: return False
-		if abs(self.m_44 - m.m_44) > EPSILON: return False
+		if abs(self.m_11 - m.m_11) > NifFormat.EPSILON: return False
+		if abs(self.m_12 - m.m_12) > NifFormat.EPSILON: return False
+		if abs(self.m_13 - m.m_13) > NifFormat.EPSILON: return False
+		if abs(self.m_14 - m.m_14) > NifFormat.EPSILON: return False
+		if abs(self.m_21 - m.m_21) > NifFormat.EPSILON: return False
+		if abs(self.m_22 - m.m_22) > NifFormat.EPSILON: return False
+		if abs(self.m_23 - m.m_23) > NifFormat.EPSILON: return False
+		if abs(self.m_24 - m.m_24) > NifFormat.EPSILON: return False
+		if abs(self.m_31 - m.m_31) > NifFormat.EPSILON: return False
+		if abs(self.m_32 - m.m_32) > NifFormat.EPSILON: return False
+		if abs(self.m_33 - m.m_33) > NifFormat.EPSILON: return False
+		if abs(self.m_34 - m.m_34) > NifFormat.EPSILON: return False
+		if abs(self.m_41 - m.m_41) > NifFormat.EPSILON: return False
+		if abs(self.m_42 - m.m_42) > NifFormat.EPSILON: return False
+		if abs(self.m_43 - m.m_43) > NifFormat.EPSILON: return False
+		if abs(self.m_44 - m.m_44) > NifFormat.EPSILON: return False
 		return True
 
 	def __ne__(self, m):

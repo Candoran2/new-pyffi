@@ -1,6 +1,5 @@
 # START_GLOBALS
-from generated.formats.nif import EPSILON
-from generated.formats.nif.nimain.structs.Vector3 import Vector3
+import generated.formats.nif as NifFormat
 # END_GLOBALS
 
 
@@ -38,7 +37,7 @@ class Vector4:
 		return v
 
 	def get_vector_3(self):
-		v = Vector3()
+		v = NifFormat.classes.Vector3()
 		v.x = self.x
 		v.y = self.y
 		v.z = self.z
@@ -53,10 +52,10 @@ class Vector4:
 		if not isinstance(rhs, Vector4):
 			raise TypeError(
 				"do not know how to compare Vector4 and %s" % rhs.__class__)
-		if abs(self.x - rhs.x) > EPSILON: return False
-		if abs(self.y - rhs.y) > EPSILON: return False
-		if abs(self.z - rhs.z) > EPSILON: return False
-		if abs(self.w - rhs.w) > EPSILON: return False
+		if abs(self.x - rhs.x) > NifFormat.EPSILON: return False
+		if abs(self.y - rhs.y) > NifFormat.EPSILON: return False
+		if abs(self.z - rhs.z) > NifFormat.EPSILON: return False
+		if abs(self.w - rhs.w) > NifFormat.EPSILON: return False
 		return True
 
 	def __ne__(self, rhs):

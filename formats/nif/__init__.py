@@ -5,8 +5,6 @@ import os
 import re
 
 from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString
-from generated.formats.nif.bshavok.niobjects.BhkConstraint import BhkConstraint
-from generated.formats.nif.bshavok.niobjects.BhkRefObject import BhkRefObject
 from generated.formats.nif.bsmain.structs.BSStreamHeader import BSStreamHeader
 from generated.formats.nif.enums.DataStreamUsage import DataStreamUsage
 from generated.formats.nif.bitflagss.DataStreamAccess import DataStreamAccess
@@ -17,25 +15,30 @@ from generated.formats.nif.nimain.structs.SizedString import SizedString
 from generated.formats.nif.nimain.structs.String import String
 
 
-def create_niobject_map():
-	"""Goes through the entire directory of the nif format to find NiObjects
-	and put them in a map of {name: NiObjectClass}"""
-	niobject_map = {}
+class _attr_dict(dict):
+
+	def __getattr__(self, key):
+		return self[key]
+
+def create_niclasses_map():
+	"""Goes through the entire directory of the nif format to find all defined
+	classes and put them in a map of {local_name: class}"""
+	niclasses_map = _attr_dict()
 	current_path = os.path.dirname(os.path.abspath(__file__))
 	for dirpath, dirnames, filenames in os.walk(current_path):
-		if os.path.split(dirpath)[-1] != "niobjects":
+		if os.path.split(dirpath)[-1] not in ("niobjects", "structs", "bitfields", "bitflagss", "enums"):
 			continue
 		for file in filenames:
-			file = os.path.splitext(file)[0]
-			if file != "__init__":
+			file, extension = os.path.splitext(file)
+			if file != "__init__" and extension == ".py":
 				rel_path = os.path.relpath(os.path.join(dirpath, file))
 				import_path = rel_path.replace(os.path.sep, ".")
 				imported_module = import_module(import_path)
 				file = file.upper()
 				for key, value in vars(imported_module).items():
-					if key.upper() == file and issubclass(value, NiObject):
-						niobject_map[value.__name__] = value
-	return niobject_map
+					if key.upper() == file:
+						niclasses_map[key] = value
+	return niclasses_map
 
 
 # filter for recognizing NIF files by extension
@@ -52,6 +55,10 @@ RE_FILENAME = re.compile(r'^.*\.(nif|kf|kfa|nifcache|jmi|texcache|pcpatch|nft|it
 ARCHIVE_CLASSES = [] # link to the actual bsa format once done
 # used for comparing floats
 EPSILON = 0.0001
+
+classes = create_niclasses_map()
+niobject_map = {niclass.__name__: niclass for niclass in classes.values() if issubclass(niclass, NiObject)}
+
 
 # exceptions
 class NifError(Exception):
@@ -77,7 +84,6 @@ class NifFile(Header):
 	:ivar modification: Neo Steam ("neosteam") or Ndoors ("ndoors") or Joymaster Interactive Howling Sword ("jmihs1") or Laxe Lore ("laxelore") style nif?
 	:type modification: str
 	"""
-	niobject_map = create_niobject_map()
 
 	def __init__(self, context=None, arg=0, template=None, set_default=True):
 		# user version and bs version will be set by init
@@ -172,7 +178,7 @@ class NifFile(Header):
 						raise NifError(f'duplicate block index ({block_index} at {stream.tell()})')
 			# create the block
 			try:
-				block_class = self.niobject_map[block_type]
+				block_class = niobject_map[block_type]
 			except KeyError:
 				raise ValueError(f"Unknown block type {block_type}.")
 			logger.debug(f"Reading {block_type} block at {stream.tell()}")
@@ -337,8 +343,8 @@ class NifFile(Header):
 			:type block: L{NifFormat.NiObject}
 			:return: ``True`` if child should come first, ``False`` otherwise.
 			"""
-			return (isinstance(block, BhkRefObject)
-					and not isinstance(block, BhkConstraint))
+			return (isinstance(block, niobject_map["bhkRefObject"])
+					and not isinstance(block, niobject_map["bhkConstraint"]))
 
 		# block already listed? if so, return
 		if root in self.blocks:
@@ -357,7 +363,7 @@ class NifFile(Header):
 
 		# special case: add bhkConstraint entities before bhkConstraint
 		# (these are actually links, not refs)
-		if isinstance(root, BhkConstraint):
+		if isinstance(root, niobject_map["bhkConstraint"]):
 			for entity in root.entities:
 				if entity is not None:
 					self._makeBlockList(entity, block_index_dct, block_type_list, block_type_dct)

@@ -1,7 +1,5 @@
 # START_GLOBALS
-from generated.formats.nif import EPSILON
-from generated.formats.nif.nimain.structs.Quaternion import Quaternion
-from generated.formats.nif.nimain.structs.Vector3 import Vector3
+import generated.formats.nif as NifFormat
 # END_GLOBALS
 
 
@@ -51,15 +49,15 @@ class Matrix33:
 
 	def is_identity(self):
 		"""Return ``True`` if the matrix is close to identity."""
-		if  (abs(self.m_11 - 1.0) > EPSILON
-			 or abs(self.m_12) > EPSILON
-			 or abs(self.m_13) > EPSILON
-			 or abs(self.m_21) > EPSILON
-			 or abs(self.m_22 - 1.0) > EPSILON
-			 or abs(self.m_23) > EPSILON
-			 or abs(self.m_31) > EPSILON
-			 or abs(self.m_32) > EPSILON
-			 or abs(self.m_33 - 1.0) > EPSILON):
+		if  (abs(self.m_11 - 1.0) > NifFormat.EPSILON
+			 or abs(self.m_12) > NifFormat.EPSILON
+			 or abs(self.m_13) > NifFormat.EPSILON
+			 or abs(self.m_21) > NifFormat.EPSILON
+			 or abs(self.m_22 - 1.0) > NifFormat.EPSILON
+			 or abs(self.m_23) > NifFormat.EPSILON
+			 or abs(self.m_31) > NifFormat.EPSILON
+			 or abs(self.m_32) > NifFormat.EPSILON
+			 or abs(self.m_33 - 1.0) > NifFormat.EPSILON):
 			return False
 		else:
 			return True
@@ -119,7 +117,7 @@ class Matrix33:
 	def is_rotation(self):
 		"""Returns ``True`` if the matrix is a rotation matrix
 		(a member of SO(3))."""
-		# NOTE: 0.01 instead of EPSILON to work around bad NIF files
+		# NOTE: 0.01 instead of NifFormat.EPSILON to work around bad NIF files
 
 		if not self.is_scale_rotation():
 			return False
@@ -149,7 +147,7 @@ class Matrix33:
 		and rotation is a C{Matrix33}. Returns a pair (scale, rotation)."""
 		rot = self.get_copy()
 		scale = self.get_scale()
-		if abs(scale) < EPSILON:
+		if abs(scale) < NifFormat.EPSILON:
 			raise ZeroDivisionError('scale is zero, unable to obtain rotation')
 		rot /= scale
 		return (scale, rot)
@@ -177,10 +175,10 @@ class Matrix33:
 	def get_scale_quat(self):
 		"""Decompose matrix into scale and quaternion."""
 		scale, rot = self.get_scale_rotation()
-		quat = Quaternion()
+		quat = NifFormat.classes.Quaternion()
 		trace = 1.0 + rot.m_11 + rot.m_22 + rot.m_33
 
-		if trace > EPSILON:
+		if trace > NifFormat.EPSILON:
 			s = (trace ** 0.5) * 2
 			quat.x = -( rot.m_32 - rot.m_23 ) / s
 			quat.y = -( rot.m_13 - rot.m_31 ) / s
@@ -227,7 +225,7 @@ class Matrix33:
 			mat.m_32 = self.m_32 * rhs
 			mat.m_33 = self.m_33 * rhs
 			return mat
-		elif isinstance(rhs, Vector3):
+		elif isinstance(rhs, NifFormat.classes.Vector3):
 			raise TypeError(
 				"matrix*vector not supported; "
 				"please use left multiplication (vector*matrix)")
@@ -278,15 +276,15 @@ class Matrix33:
 		if not isinstance(mat, Matrix33):
 			raise TypeError(
 				"do not know how to compare Matrix33 and %s"%mat.__class__)
-		if (abs(self.m_11 - mat.m_11) > EPSILON
-			or abs(self.m_12 - mat.m_12) > EPSILON
-			or abs(self.m_13 - mat.m_13) > EPSILON
-			or abs(self.m_21 - mat.m_21) > EPSILON
-			or abs(self.m_22 - mat.m_22) > EPSILON
-			or abs(self.m_23 - mat.m_23) > EPSILON
-			or abs(self.m_31 - mat.m_31) > EPSILON
-			or abs(self.m_32 - mat.m_32) > EPSILON
-			or abs(self.m_33 - mat.m_33) > EPSILON):
+		if (abs(self.m_11 - mat.m_11) > NifFormat.EPSILON
+			or abs(self.m_12 - mat.m_12) > NifFormat.EPSILON
+			or abs(self.m_13 - mat.m_13) > NifFormat.EPSILON
+			or abs(self.m_21 - mat.m_21) > NifFormat.EPSILON
+			or abs(self.m_22 - mat.m_22) > NifFormat.EPSILON
+			or abs(self.m_23 - mat.m_23) > NifFormat.EPSILON
+			or abs(self.m_31 - mat.m_31) > NifFormat.EPSILON
+			or abs(self.m_32 - mat.m_32) > NifFormat.EPSILON
+			or abs(self.m_33 - mat.m_33) > NifFormat.EPSILON):
 			return False
 		return True
 

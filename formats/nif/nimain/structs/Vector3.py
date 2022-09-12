@@ -1,9 +1,7 @@
 # START_GLOBALS
 import math
 
-from generated.formats.nif import EPSILON
-from generated.formats.nif.nimain.structs.Matrix33 import Matrix33
-from generated.formats.nif.nimain.structs.Matrix44 import Matrix44
+import generated.formats.nif as NifFormat
 # END_GLOBALS
 
 
@@ -92,13 +90,13 @@ class Vector3:
 			return v
 		elif isinstance(x, Vector3):
 			return self.x * x.x + self.y * x.y + self.z * x.z
-		elif isinstance(x, Matrix33):
+		elif isinstance(x, NifFormat.classes.Matrix33):
 			v = Vector3()
 			v.x = self.x * x.m_11 + self.y * x.m_21 + self.z * x.m_31
 			v.y = self.x * x.m_12 + self.y * x.m_22 + self.z * x.m_32
 			v.z = self.x * x.m_13 + self.y * x.m_23 + self.z * x.m_33
 			return v
-		elif isinstance(x, Matrix44):
+		elif isinstance(x, NifFormat.classes.Matrix44):
 			return self * x.get_matrix_33() + x.get_translation()
 		else:
 			raise TypeError("do not know how to multiply Vector3 with %s"%x.__class__)
@@ -201,9 +199,9 @@ class Vector3:
 			return False
 		if not isinstance(x, Vector3):
 			raise TypeError("do not know how to compare Vector3 and %s" % x.__class__)
-		if abs(self.x - x.x) > EPSILON: return False
-		if abs(self.y - x.y) > EPSILON: return False
-		if abs(self.z - x.z) > EPSILON: return False
+		if abs(self.x - x.x) > NifFormat.EPSILON: return False
+		if abs(self.y - x.y) > NifFormat.EPSILON: return False
+		if abs(self.z - x.z) > NifFormat.EPSILON: return False
 		return True
 
 	def __ne__(self, x):
