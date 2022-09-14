@@ -5,6 +5,8 @@ import generated.utils.mathutils as m_util
 
 
 class BhkCapsuleShape:
+# START_CLASS
+
 	def apply_scale(self, scale):
 		"""Apply scale factor <scale> on data."""
 		# apply scale on dimensions

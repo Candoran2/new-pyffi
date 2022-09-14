@@ -6,6 +6,8 @@ from generated.utils.quickhull import qhull3d
 
 
 class BhkConvexVerticesShape:
+# START_CLASS
+
 	def apply_scale(self, scale):
 		"""Apply scale factor on data."""
 		if abs(scale - 1.0) < NifFormat.EPSILON: return

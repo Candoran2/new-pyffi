@@ -20,7 +20,8 @@ class SizedString16:
 
 	@staticmethod
 	def get_size(context, instance, arguments=()):
-		return Ushort.get_size(context, instance) + len(instance.encode(errors="surrogateescape"))
+		string_len = len(instance.encode(errors="surrogateescape"))
+		return Ushort.get_size(context, string_len) + string_len
 
 	get_field = None
 	_get_filtered_attribute_list = None

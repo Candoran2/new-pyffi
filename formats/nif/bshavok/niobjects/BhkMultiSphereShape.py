@@ -4,6 +4,8 @@ from generated.utils.mathutils import vecAdd, vecscalarMul, matAdd
 # END_GLOBALS
 
 class BhkMultiSphereShape:
+# START_CLASS
+
 	def get_mass_center_inertia(self, density = 1, solid = True):
 		"""Return center of gravity and area."""
 		subshapes_mci = [

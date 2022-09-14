@@ -1,4 +1,6 @@
 class BhkLimitedHingeConstraint:
+# START_CLASS
+
 	def apply_scale(self, scale):
 		"""Scale data."""
 		# apply scale on transform

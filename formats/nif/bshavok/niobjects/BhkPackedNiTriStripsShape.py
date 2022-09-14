@@ -7,6 +7,8 @@ from generated.utils.mathutils import float_to_int
 # END_GLOBALS
 
 class BhkPackedNiTriStripsShape:
+# START_CLASS
+
 	def get_mass_center_inertia(self, density = 1, solid = True):
 		"""Return mass, center, and inertia tensor."""
 		return get_mass_center_inertia_polyhedron(

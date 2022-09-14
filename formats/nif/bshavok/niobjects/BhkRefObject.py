@@ -1,4 +1,6 @@
 class BhkRefObject:
+# START_CLASS
+
 	def get_shape_mass_center_inertia(self, density=1, solid=True):
 		"""Return mass, center of gravity, and inertia tensor of
 		this object's shape, if self.shape is not None.

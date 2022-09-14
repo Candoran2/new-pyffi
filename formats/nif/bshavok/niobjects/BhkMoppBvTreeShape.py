@@ -6,6 +6,8 @@ import generated.formats.nif as NifFormat
 # END_GLOBALS
 
 class BhkMoppBvTreeShape:
+# START_CLASS
+
 	def get_mass_center_inertia(self, density=1, solid=True):
 		"""Return mass, center of gravity, and inertia tensor."""
 		return self.get_shape_mass_center_inertia(

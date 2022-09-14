@@ -4,6 +4,8 @@ from generated.utils.inertia import getMassInertiaSphere
 
 
 class BhkSphereShape:
+# START_CLASS
+
 	def apply_scale(self, scale):
 		"""Apply scale factor <scale> on data."""
 		# apply scale on dimensions

@@ -4,6 +4,8 @@ import generated.formats.nif as NifFormat
 
 
 class BhkConstraint:
+# START_CLASS
+
 	def get_transform_a_b(self, parent):
 		"""Returns the transform of the first entity relative to the second
 		entity. Root is simply a nif block that is a common parent to both

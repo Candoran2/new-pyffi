@@ -3,7 +3,7 @@ from generated.utils.tristrip import triangulate
 # END_GLOBALS
 
 class SkinPartition:
-
+# START_CLASS
 	
 	def get_triangles(self):
 		"""Get list of triangles of this partition.

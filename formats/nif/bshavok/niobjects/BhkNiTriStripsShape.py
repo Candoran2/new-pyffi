@@ -5,6 +5,8 @@ from generated.utils.mathutils import vecAdd, vecscalarMul, matAdd
 # END_GLOBALS
 
 class BhkNiTriStripsShape:
+# START_CLASS
+
 	def get_interchangeable_packed_shape(self):
 		"""Returns a bhkPackedNiTriStripsShape block that is geometrically
 		interchangeable.

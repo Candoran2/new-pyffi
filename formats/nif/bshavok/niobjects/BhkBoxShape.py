@@ -4,6 +4,7 @@ from generated.utils.inertia import getMassInertiaBox
 
 
 class BhkBoxShape:
+# START_CLASS
 
 	def apply_scale(self, scale):
 		"""Apply scale factor C{scale} on data."""
