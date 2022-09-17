@@ -35,4 +35,11 @@ def version_from_str(version_str):
 	while len(ver_list) < 4: ver_list.append(0)
 	return (ver_list[0] << 24) + (ver_list[1] << 16) + (ver_list[2] << 8) + ver_list[3]
 
+def has_bs_ver(version, user_version):
+	# condition copied from xml, update if it changes
+	if (version == 167772418) or (((version == 335675399) or ((version == 335544325) or ((version >= 167837696) and ((version <= 335544324) and (user_version <= 11))))) and (user_version >= 3)):
+		return True
+	else:
+		return False
+
 

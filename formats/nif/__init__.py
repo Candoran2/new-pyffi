@@ -4,21 +4,24 @@ import logging
 import os
 import re
 
-from generated.formats.nif.basic import Uint, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString
+from generated.formats.nif.basic import Uint, FileVersion, Ulittle32, LineString, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString
 from generated.formats.nif.bsmain.structs.BSStreamHeader import BSStreamHeader
 from generated.formats.nif.enums.DataStreamUsage import DataStreamUsage
+from generated.formats.nif.enums.EndianType import EndianType
 from generated.formats.nif.bitflagss.DataStreamAccess import DataStreamAccess
 from generated.formats.nif.nimain.niobjects.NiObject import NiObject
 from generated.formats.nif.nimain.structs.Header import Header
 from generated.formats.nif.nimain.structs.Footer import Footer
 from generated.formats.nif.nimain.structs.SizedString import SizedString
 from generated.formats.nif.nimain.structs.String import String
+from generated.formats.nif.versions import has_bs_ver
 
 
 class _attr_dict(dict):
 
 	def __getattr__(self, key):
 		return self[key]
+
 
 def create_niclasses_map():
 	"""Goes through the entire directory of the nif format to find all defined
@@ -31,9 +34,9 @@ def create_niclasses_map():
 		for file in filenames:
 			file, extension = os.path.splitext(file)
 			if file != "__init__" and extension == ".py":
-				rel_path = os.path.relpath(os.path.join(dirpath, file))
-				import_path = rel_path.replace(os.path.sep, ".")
-				imported_module = import_module(import_path)
+				rel_path = os.path.relpath(os.path.join(dirpath, file), start=current_path)
+				import_path = f".{rel_path.replace(os.path.sep, '.')}"
+				imported_module = import_module(import_path, __name__)
 				file = file.upper()
 				for key, value in vars(imported_module).items():
 					if key.upper() == file:
@@ -92,6 +95,45 @@ class NifFile(Header):
 		self.roots = []
 		self.blocks = []
 		self.modification = None
+
+	@staticmethod
+	def inspect_version_only(stream):
+		pos = stream.tell()
+		try:
+			header_string = HeaderString.from_stream(stream)
+			h_ver, modification = HeaderString.version_modification_from_headerstring(header_string)
+			if h_ver <= 0x03010000:
+				LineString.from_stream(stream)
+			ver_int = FileVersion.from_stream(stream)
+			# special case for Laxe Lore
+			if h_ver == 0x14000004 and ver_int == 0x5A000004:
+				modification = "laxelore"
+			# neosteam and ndoors have a special version integer
+			elif (not modification) or modification == "jmihs1":
+				 if ver_int != h_ver:
+					 raise ValueError(f"Corrupted NIF file: header version string in {header_string} does not "
+					   f"correspond with header version field {ver_int}")
+			elif modification == "neosteam":
+				if ver_int != 0x08F35232:
+					raise ValueError("Corrupted NIF file: invalid NeoSteam version.")
+			elif modification == "ndoors":
+				if ver_int != 0x73615F67:
+					raise ValueError("Corrupted NIF file: invalid Ndoors version.")
+			# read EndianType to advance stream
+			if ver_int >= 0x14000004:
+				EndianType.from_stream(stream)
+			user = 0
+			bsver = 0
+			if ver_int >= 0x0A010000:
+				user = Ulittle32.from_stream(stream)
+				# only need to set bsver if Bethesda
+				if has_bs_ver(ver_int, user):
+					# read num_blocks
+					Ulittle32.from_stream(stream)
+					bsver = Ulittle32.from_stream(stream)
+			return modification, (ver_int, user, bsver)
+		finally:
+			stream.seek(pos)
 
 	@classmethod
 	def from_version(cls, version=0x04000002, user_version=0, user_version_2=0):
