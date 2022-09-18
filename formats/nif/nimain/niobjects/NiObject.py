@@ -1,5 +1,6 @@
 # START_GLOBALS
 import generated.formats.nif as NifFormat
+from generated.formats.nif.basic import Ref, Ptr
 # END_GLOBALS
 
 class NiObject:
@@ -52,6 +53,19 @@ class NiObject:
 		"""
 		pass
 
+
+	def get_links(self):
+		condition_function = lambda x: issubclass(x[1], (Ref, Ptr))
+		for val in NifFormat.get_condition_values_recursive(self, condition_function):
+			if val is not None:
+				yield val
+
+	def get_refs(self):
+		condition_function = lambda x: issubclass(x[1], Ref)
+		for val in NifFormat.get_condition_values_recursive(self, condition_function):
+			if val is not None:
+				yield val
+
 	def tree(self, block_type = None, follow_all = True, unique = False):
 		"""A generator for parsing all blocks in the tree (starting from and
 		including C{self}).
@@ -78,7 +92,7 @@ class NiObject:
 			return # don't recurse further
 
 		# yield tree attached to each child
-		for child in self.get_refs():
+		for child in type(self).get_refs(self):
 			for block in child.tree(block_type = block_type, follow_all = follow_all):
 				yield block
 
@@ -107,3 +121,12 @@ class NiObject:
 		else:
 			# for blocks with references: quick check only
 			return self is other
+
+	# GlobalNode
+
+	def get_global_child_nodes(self, edge_filter=()):
+		yield from self.get_refs()
+
+	def get_global_display(self, edge_filter=()):
+		"""Construct a convenient name for the block itself."""
+		return (self.name if hasattr(self, "name") else "")

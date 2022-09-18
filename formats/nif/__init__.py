@@ -44,6 +44,30 @@ def create_niclasses_map():
 	return niclasses_map
 
 
+def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
+	for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
+		if condition_function(attribute):
+			yield attribute
+
+
+def get_condition_attributes_recursive(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
+	for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
+		field_name, field_type, field_arguments = attribute[0:3]
+		if condition_function(attribute):
+			yield struct_type, struct_instance, attribute
+		if callable(getattr(field_type, "_get_filtered_attribute_list", None)):
+			yield from get_condition_attributes_recursive(field_type,
+											   struct_type.get_field(struct_instance, field_name),
+											   condition_function,
+											   field_arguments,
+											   include_abstract)
+
+
+def get_condition_values_recursive(instance, condition_function, arguments=(), include_abstract=True):
+	for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(instance), instance, condition_function, arguments, include_abstract):
+		val = s_type.get_field(s_inst, f_name)
+		yield val
+
 # filter for recognizing NIF files by extension
 # .kf are NIF files containing keyframes
 # .kfa are NIF files containing keyframes in DAoC style
@@ -264,43 +288,15 @@ class NifFile(Header):
 				if root >= 0:
 					self.roots.append(self.blocks[root])
 
-	@staticmethod
-	def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
-		for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
-			if condition_function(attribute):
-				yield attribute
-
-	@classmethod
-	def get_condition_attributes_recursive(cls, struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
-		for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
-			field_name, field_type, field_arguments = attribute[0:3]
-			if condition_function(attribute):
-				yield struct_type, struct_instance, attribute
-			if callable(getattr(field_type, "_get_filtered_attribute_list", None)):
-				yield from cls.get_condition_attributes_recursive(field_type,
-												   struct_type.get_field(struct_instance, field_name),
-												   condition_function,
-												   field_arguments,
-												   include_abstract)
-
-	@classmethod
-	def get_condition_values_recursive(cls, instance, condition_function, arguments=(), include_abstract=True):
-		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, condition_function, arguments, include_abstract):
-			val = s_type.get_field(s_inst, f_name)
-			yield val
-
-	@classmethod
-	def get_links(cls, instance):
-		condition_function = lambda x: issubclass(x[1], (Ref, Ptr))
-		for val in cls.get_condition_values_recursive(instance, condition_function):
-			if val is not None:
-				yield val
+	# GlobalNode
+	def get_global_child_nodes(self, edge_filter=()):
+		return (root for root in self.roots)
 
 	@classmethod
 	def get_strings(cls, instance):
 		"""Get all strings in the structure."""
 		condition_function = lambda x: issubclass(x[1], (String, NiFixedString))
-		for val in cls.get_condition_values_recursive(instance, condition_function):
+		for val in get_condition_values_recursive(instance, condition_function):
 			if val:
 				yield val
 
@@ -308,7 +304,7 @@ class NifFile(Header):
 	def get_recursive_strings(cls, instance):
 		"""Get all strings in the entire tree"""
 		condition_function = lambda x: issubclass(x[1], (String, NiFixedString, Ref))
-		for s_type, s_inst, (f_name, f_type, arguments, _) in cls.get_condition_attributes_recursive(type(instance), instance, condition_function):
+		for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(instance), instance, condition_function):
 			value = s_type.get_field(s_inst, f_name)
 			if issubclass(f_type, Ref):
 				if value is not None:
@@ -318,39 +314,12 @@ class NifFile(Header):
 				if value:
 					yield value
 
-	@classmethod
-	def get_refs(cls, instance):
-		condition_function = lambda x: issubclass(x[1], Ref)
-		for val in cls.get_condition_values_recursive(instance, condition_function):
-			if val is not None:
-				yield val
-
-	@classmethod
-	def tree(cls, instance, block_type=None, follow_all=True, unique=False):
-		# unique blocks: reduce this to the case of non-unique blocks
-		if unique:
-			block_list = []
-			for block in cls.tree(instance, block_type=block_type, follow_all=follow_all, unique=False):
-				if not block in block_list:
-					yield block
-					block_list.append(block)
-		# yield instance
-		if not block_type:
-			yield instance
-		elif isinstance(instance, block_type):
-			yield instance
-		elif not follow_all:
-			return
-		for child in cls.get_refs(instance):
-			for block in cls.tree(child, block_type=block_type, follow_all=follow_all):
-				yield block
-
 	def resolve_references(self):
 		# go through every NiObject and replace references and pointers with the
 		# actual object they're pointing to
 		is_ref = lambda attribute: issubclass(attribute[1], (Ref, Ptr))
 		for block in self.blocks:
-			for parent_type, parent_instance, attribute in self.get_condition_attributes_recursive(type(block), block, is_ref):
+			for parent_type, parent_instance, attribute in get_condition_attributes_recursive(type(block), block, is_ref):
 				block_index = parent_type.get_field(parent_instance, attribute[0])
 				if isinstance(block_index, int):
 					if block_index >= 0:
@@ -413,7 +382,7 @@ class NifFile(Header):
 		children_left = []
 		# add children that come before the block
 		# store any remaining children in children_left (processed later)
-		for child in self.get_refs(root):
+		for child in root.get_refs():
 			if _blockChildBeforeParent(child):
 				self._makeBlockList(child, block_index_dct, block_type_list, block_type_dct)
 			else:
