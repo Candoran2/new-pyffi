@@ -357,6 +357,9 @@ class Ptr(Int):
 	read_array = None
 	write_array = None
 
+	def __new__(cls, context=None, arg=0, template=None):
+		return None
+
 	@classmethod
 	def to_stream(cls, stream, instance):
 		if instance is None:
@@ -374,6 +377,9 @@ class Ref(Int):
 	create_array = None
 	read_array = None
 	write_array = None
+
+	def __new__(cls, context=None, arg=0, template=None):
+		return None
 
 	@classmethod
 	def to_stream(cls, stream, instance):
@@ -422,3 +428,22 @@ class NiFixedString:
 		return repr(instance)
 
 switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, Float, Hfloat, BlockTypeIndex, Bool, Ptr, Ref, StringOffset]
+
+basic_map = {"Uint64": Uint64,
+			 "Int64": Int64,
+			 "Ulittle32": Ulittle32,
+			 "Uint": Uint,
+			 "Int": Int,
+			 "Ushort": Ushort,
+			 "Short": Short,
+			 "Char": Char,
+			 "Byte": Byte,
+			 "Bool": Bool,
+			 "BlockTypeIndex": BlockTypeIndex,
+			 "FileVersion": FileVersion,
+			 "Float": Float,
+			 "Hfloat": Hfloat,
+			 "HeaderString": HeaderString,
+			 "LineString": LineString,
+			 "Ptr": Ptr,
+			 "Ref": Ref}

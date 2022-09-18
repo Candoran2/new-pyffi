@@ -4,7 +4,7 @@ import logging
 import os
 import re
 
-from generated.formats.nif.basic import Uint, FileVersion, Ulittle32, LineString, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString
+from generated.formats.nif.basic import Uint, FileVersion, Ulittle32, LineString, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString, basic_map
 from generated.formats.nif.bsmain.structs.BSStreamHeader import BSStreamHeader
 from generated.formats.nif.enums.DataStreamUsage import DataStreamUsage
 from generated.formats.nif.enums.EndianType import EndianType
@@ -84,6 +84,7 @@ ARCHIVE_CLASSES = [] # link to the actual bsa format once done
 EPSILON = 0.0001
 
 classes = create_niclasses_map()
+classes.update(basic_map)
 niobject_map = {niclass.__name__: niclass for niclass in classes.values() if issubclass(niclass, NiObject)}
 
 
@@ -415,6 +416,9 @@ class NifFile(Header):
 	def write_fields(cls, stream, instance):
 		super().write_fields(stream, instance)
 
+	def write(self, stream):
+		return type(self).to_stream(stream, self)
+
 	@classmethod
 	def from_stream(cls, stream, context=None, arg=0, template=None):
 		instance = cls(context, arg, template, set_default=False)
@@ -456,14 +460,14 @@ class NifFile(Header):
 		instance.num_blocks = len(instance.blocks)
 		instance.num_block_types = len(block_type_list)
 		instance.block_types[:] = block_type_list
-		instance.block_type_index[:] = [block_type_dct[block] for block in instance.blocks]
+		instance.block_type_index = [block_type_dct[block] for block in instance.blocks]
 		instance.num_strings = len(instance._string_list)
 		if instance._string_list:
 			instance.max_string_length = max([len(s) for s in instance._string_list])
 		else:
 			instance.max_string_length = 0
 		instance.strings[:] = instance._string_list
-		instance.block_size[:] = [type(block).get_size(instance, block) for block in instance.blocks]
+		instance.block_size = [type(block).get_size(instance, block) for block in instance.blocks]
 
 		# update the basics before doing any writing
 		[basic.update_struct(instance) for basic in switchable_endianness]

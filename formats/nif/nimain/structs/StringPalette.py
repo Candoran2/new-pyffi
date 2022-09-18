@@ -1,38 +1,126 @@
-from generated.formats.nif.basic import Uint
-from generated.formats.nif.nimain.structs.SizedString import SizedString
+# START_GLOBALS
+import logging
+
+_b00 = b"\x00"
+encoding = "utf-8"
+# END_GLOBALS
 
 class StringPalette:
 
 # START_CLASS
+	def get_string(self, offset):
+		"""Return string at given offset.
 
+		>>> from pyffi.formats.nif import NifFormat
+		>>> pal = NifFormat.StringPalette()
+		>>> pal.add_string("abc")
+		0
+		>>> pal.add_string("def")
+		4
+		>>> print(pal.get_string(0).decode("ascii"))
+		abc
+		>>> print(pal.get_string(4).decode("ascii"))
+		def
+		>>> pal.get_string(5) # doctest: +ELLIPSIS
+		pyffi.nif.stringpalette:WARNING:StringPalette: no string starts at offset 5 (string is b'ef', preceeding character is b'd')
+		b'ef'
+		>>> pal.get_string(100) # doctest: +ELLIPSIS
+		Traceback (most recent call last):
+			...
+		ValueError: ...
+		"""
+		palette_bytes = self.palette.encode(encoding)
+		# check that offset isn't too large
+		if offset >= len(palette_bytes):
+			raise ValueError(
+				f"StringPalette: getting string at {offset} "
+				f"but palette is only {len(palette_bytes)} long")
+		# check that a string starts at this offset
+		if offset > 0 and palette_bytes[offset-1:offset] != "\x00":
+			logger = logging.getLogger("generated.nif.stringpalette")
+			logger.warning(
+				f"StringPalette: no string starts at offset {offset} "
+				f"(string is {palette_bytes[offset:self.palette.find(_b00, offset)]}, "
+				f"preceeding character is {self.palette[offset-1:offset]})")
+		# return the string
+		return palette_bytes[offset:palette_bytes.find(_b00, offset)]
 
-	def __new__(self, context=None, arg=0, template=None, set_default=True):
-		return ['']
+	def get_all_strings(self):
+		"""Return a list of all strings.
 
-	@staticmethod
-	def from_stream(stream, context=None, arg=0, template=None):
-		palette = SizedString.from_stream(stream, context)
-		# need to consume length from the stream
-		length = Uint.from_stream(stream, context)
-		# palette are \x00 terminated strings, so the last one should be empty
-		palette = palette.split("\x00")[:-1]
-		return palette
+		>>> from pyffi.formats.nif import NifFormat
+		>>> pal = NifFormat.StringPalette()
+		>>> pal.add_string("abc")
+		0
+		>>> pal.add_string("def")
+		4
+		>>> for x in pal.get_all_strings():
+		...	 print(x.decode("ascii"))
+		abc
+		def
+		>>> # pal.palette.decode("ascii") needs lstrip magic for py3k
+		>>> print(repr(pal.palette.decode("ascii")).lstrip("u"))
+		'abc\\x00def\\x00'
+		"""
+		return self.palette[:-1].split(str(_b00))
 
-	@staticmethod
-	def to_stream(stream, instance):
-		palette = "\x00".join(instance) + "\x00"
-		SizedString.to_stream(stream, palette)
-		Uint.to_stream(len(SizedString))
+	def add_string(self, text):
+		"""Adds string to palette (will recycle existing strings if possible) and
+		return offset to the string in the palette.
 
-	@staticmethod
-	def get_size(context, instance, arguments=()):
-		palette_string_len = sum([len(string.encode(errors="surrogateescape")) for string in instance]) + len(instance)
-		return Uint.get_size(context, palette_string_len) + palette_string_len + Uint.get_size(context, palette_string_len)
+		>>> from pyffi.formats.nif import NifFormat
+		>>> pal = NifFormat.StringPalette()
+		>>> pal.add_string("abc")
+		0
+		>>> pal.add_string("abc")
+		0
+		>>> pal.add_string("def")
+		4
+		>>> pal.add_string("")
+		-1
+		>>> print(pal.get_string(4).decode("ascii"))
+		def
+		"""
+		palette_bytes = self.palette.encode("utf8")
+		# empty text
+		if not text:
+			return -1
+		# convert text to bytes if necessary
+		if isinstance(text, str):
+			text = text.encode(encoding)
+		# check if string is already in the palette
+		# ... at the start
+		if text + _b00 == palette_bytes[:len(text) + 1]:
+			return 0
+		# ... or elsewhere
+		offset = palette_bytes.find(_b00 + text + _b00)
+		if offset != -1:
+			return offset + 1
+		# if no match, add the string
+		if offset == -1:
+			offset = len(palette_bytes)
+			palette_bytes = palette_bytes + text + _b00
+			self.palette = palette_bytes.decode(encoding)
+			self.length += len(text) + 1
+		# return the offset
+		return offset
 
-	get_field = None
-	_get_filtered_attribute_list = None
+	def clear(self):
+		"""Clear all strings in the palette.
 
-	@staticmethod
-	def fmt_member(instance, indent=0):
-		return repr(instance)
-
+		>>> from pyffi.formats.nif import NifFormat
+		>>> pal = NifFormat.StringPalette()
+		>>> pal.add_string("abc")
+		0
+		>>> pal.add_string("def")
+		4
+		>>> # pal.palette.decode("ascii") needs lstrip magic for py3k
+		>>> print(repr(pal.palette.decode("ascii")).lstrip("u"))
+		'abc\\x00def\\x00'
+		>>> pal.clear()
+		>>> # pal.palette.decode("ascii") needs lstrip magic for py3k
+		>>> print(repr(pal.palette.decode("ascii")).lstrip("u"))
+		''
+		"""
+		self.palette = "" # empty bytes object
+		self.length = 0
