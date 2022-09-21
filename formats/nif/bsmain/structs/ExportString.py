@@ -1,7 +1,5 @@
-from generated.array import Array
 from generated.base_struct import BaseStruct
 from generated.formats.nif.basic import Byte
-from generated.formats.nif.basic import Char
 
 
 class ExportString(BaseStruct):
@@ -35,3 +33,8 @@ class ExportString(BaseStruct):
 			return len(instance)
 		elif key == "chars":
 			return instance
+
+	@classmethod
+	def validate_instance(cls, instance, context=None, arguments=()):
+		assert isinstance(instance, str)
+		assert len(instance) <= 255

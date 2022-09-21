@@ -35,3 +35,8 @@ class String:
 	@staticmethod
 	def fmt_member(instance, indent=0):
 		return repr(instance)
+
+	@classmethod
+	def validate_instance(cls, instance, context=None, arguments=()):
+		# either it contained a sizedstring or it referred to one in the header
+		return SizedString.validate_instance(instance, context, (0, None))

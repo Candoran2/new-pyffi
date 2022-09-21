@@ -506,6 +506,12 @@ class NifFile(Header):
 		Footer.to_stream(stream, ftr)
 		return instance
 
+	def validate(self):
+		type(self).validate_instance(self, self, (0, None))
+		for root in self.roots:
+			for block in root.tree():
+				type(block).validate_instance(block, self, arguments=(0, None))
+
 	@classmethod
 	def from_path(cls, filepath):
 		with open(filepath, "rb") as stream:

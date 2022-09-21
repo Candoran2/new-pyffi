@@ -29,3 +29,8 @@ class SizedString:
 	@staticmethod
 	def fmt_member(instance, indent=0):
 		return repr(instance)
+
+	@classmethod
+	def validate_instance(cls, instance, context=None, arguments=()):
+		assert isinstance(instance, str)
+		assert len(instance) <= 4294967295

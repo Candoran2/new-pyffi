@@ -3,12 +3,13 @@ import numpy as np
 from struct import Struct
 
 from generated.array import Array
+from generated.base_struct import StructMetaClass
 import generated.formats.base.basic as basic
 from generated.formats.nif.versions import version_from_str
 from generated.io import MAX_LEN
 
 
-def ve_class_from_struct(le_struct, from_value_func):
+def ve_class_from_struct(le_struct, from_value_func, name=''):
 	"""Create the reading/writing class for a variable endianness struct"""
 
 	# declare these in the local scope for faster name resolutions
@@ -16,7 +17,10 @@ def ve_class_from_struct(le_struct, from_value_func):
 	# these functions are used for efficient read/write of arrays
 	empty = np.empty
 
-	class ConstructedClass:
+	class ConstructedClass(metaclass=StructMetaClass):
+
+		if name:
+			__name__ = name
 
 		_le_struct = le_struct
 		_be_struct = Struct(le_struct.format.replace('<', '>'))
@@ -134,23 +138,32 @@ def ve_class_from_struct(le_struct, from_value_func):
 			lines_new = [lines[0], ] + ["\t" * indent + line for line in lines[1:]]
 			return "\n".join(lines_new)
 
+		@classmethod
+		def validate_instance(cls, instance, context=None, arguments=()):
+			assert(instance == cls.from_value(instance))
+
+		@classmethod
+		def validate_array(cls, instance, context=None, arguments=()):
+			assert instance.shape == arguments[2]
+			assert instance.dtype.char == cls.dtype.char
+
 
 	ConstructedClass.set_struct(ConstructedClass._le_struct)
 
 	return ConstructedClass
 
 
-Uint64 = ve_class_from_struct(Struct("<Q"), lambda value: int(value) % 18446744073709551616)
-Int64 = ve_class_from_struct(Struct("<q"), lambda value: (int(value) + 9223372036854775808) % 18446744073709551616 - 9223372036854775808)
-Ulittle32 = basic.Uint
-Uint = ve_class_from_struct(Struct("<I"), lambda value: int(value) % 4294967296)
-Int = ve_class_from_struct(Struct("<i"), lambda value: (int(value) + 2147483648) % 4294967296 - 2147483648)
-Ushort = ve_class_from_struct(Struct("<H"), lambda value: int(value) % 65536)
-Short = ve_class_from_struct(Struct("<h"), lambda value: (int(value) + 32768) % 65536 - 32768)
-Byte = basic.Byte
-FileVersion = Ulittle32
-Float = ve_class_from_struct(Struct("<f"), float)
-Hfloat = ve_class_from_struct(Struct("<e"), float)
+Uint64 = ve_class_from_struct(Struct("<Q"), lambda value: int(value) % 18446744073709551616, name="uint64")
+Int64 = ve_class_from_struct(Struct("<q"), lambda value: (int(value) + 9223372036854775808) % 18446744073709551616 - 9223372036854775808, name="int64")
+class Ulittle32(basic.Uint): pass
+Uint = ve_class_from_struct(Struct("<I"), lambda value: int(value) % 4294967296, name='uint')
+Int = ve_class_from_struct(Struct("<i"), lambda value: (int(value) + 2147483648) % 4294967296 - 2147483648, name='int')
+Ushort = ve_class_from_struct(Struct("<H"), lambda value: int(value) % 65536, name='ushort')
+Short = ve_class_from_struct(Struct("<h"), lambda value: (int(value) + 32768) % 65536 - 32768, name='short')
+class Byte(basic.Byte): pass
+class FileVersion(Ulittle32): pass
+Float = ve_class_from_struct(Struct("<f"), float, name='float')
+Hfloat = ve_class_from_struct(Struct("<e"), float, name='hfloat')
 
 class Char:
 	def __new__(cls, context=None, arg=0, template=None):
@@ -182,17 +195,23 @@ class Char:
 			for i in range(instance.shape[0]):
 				yield (i, Array, (0, None, instance.shape[1:], cls), (False, None))
 
+	@classmethod
+	def validate_instance(cls, instance, context=None, arguments=()):
+		assert(isinstance(instance, str))
+		assert(len(instance) == 1)
+
 	@staticmethod
 	def fmt_member(member, indent=0):
 		lines = str(member).split("\n")
 		lines_new = [lines[0], ] + ["\t" * indent + line for line in lines[1:]]
 		return "\n".join(lines_new)
 
-BlockTypeIndex = Short # may need to inherit instead and be its own class
+class BlockTypeIndex(Short): pass
 
 class Bool(ve_class_from_struct(Struct('<q'), lambda value: (int(value) + 2147483648) % 4294967296 - 2147483648)):
 	"""A boolean; 32-bit from 4.0.0.2, and 8-bit from 4.1.0.1 on."""
 
+	# not sure whether b and i or B and I, but xml says it isn't countable
 	_le_byte_struct = Struct("<b")
 	_be_byte_struct = Struct(">b")
 	_le_int_struct = Struct("<i")
@@ -220,6 +239,10 @@ class Bool(ve_class_from_struct(Struct('<q'), lambda value: (int(value) + 214748
 			else:
 				cls.set_struct(cls._be_byte_struct)
 
+		@classmethod
+		def validate_array(cls, instance, context=None, arguments=()):
+			assert instance.shape == arguments[2]
+			assert instance.dtype.char in ("b", "i")
 
 class LineString:
 	"""A variable length string that ends with a newline character (0x0A)."""
@@ -260,6 +283,11 @@ class LineString:
 		lines = str(member).split("\n")
 		lines_new = [lines[0], ] + ["\t" * indent + line for line in lines[1:]]
 		return "\n".join(lines_new)
+
+	@classmethod
+	def validate_instance(cls, instance, context=None, arguments=()):
+		assert(isinstance(instance, str))
+		assert(len(instance.encode(errors="surrogateescape")) <= cls.MAX_LEN)
 
 class HeaderString(LineString):
 	"""
@@ -356,6 +384,7 @@ class Ptr(Int):
 	create_array = None
 	read_array = None
 	write_array = None
+	validate_array = None
 
 	def __new__(cls, context=None, arg=0, template=None):
 		return None
@@ -371,12 +400,17 @@ class Ptr(Int):
 	@staticmethod
 	def fmt_member(member, indent=0):
 		return f'{type(member).__name__} id: {id(member)}'
+
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		assert ((instance is None) or isinstance(instance, arguments[1]))
 
 class Ref(Int):
 	# remove the array writing functions, because otherwise you can't assign the resolved blocks
 	create_array = None
 	read_array = None
 	write_array = None
+	validate_array = None
 
 	def __new__(cls, context=None, arg=0, template=None):
 		return None
@@ -393,7 +427,11 @@ class Ref(Int):
 	def fmt_member(member, indent=0):
 		return f'{type(member).__name__} id: {id(member)}'
 
-StringOffset = Uint #although a different class, no different (except not countable)
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		assert ((instance is None) or isinstance(instance, arguments[1]))
+
+class StringOffset(Uint): pass #although a different class, no different (except not countable)
 class NiFixedString:
 
 	def __new__(self, context, arg=0, template=None, set_default=True):
@@ -426,6 +464,10 @@ class NiFixedString:
 	@staticmethod
 	def fmt_member(instance, indent=0):
 		return repr(instance)
+
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		assert isinstance(instance, str)
 
 switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, Float, Hfloat, BlockTypeIndex, Bool, Ptr, Ref, StringOffset]
 
