@@ -1,5 +1,6 @@
 # START_GLOBALS
 import generated.formats.nif as NifFormat
+import pyffi.formats.dds
 # END_GLOBALS
 
 class NiPixelFormat:

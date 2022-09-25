@@ -130,10 +130,5 @@ class NiAVObject:
 		self.translation.x *= scale
 		self.translation.y *= scale
 		self.translation.z *= scale
-		# apply scale on bounding box
-		self.bounding_box.translation.x *= scale
-		self.bounding_box.translation.y *= scale
-		self.bounding_box.translation.z *= scale
-		self.bounding_box.radius.x *= scale
-		self.bounding_box.radius.y *= scale
-		self.bounding_box.radius.z *= scale
+		# apply scale on bounding volume
+		self.bounding_volume.apply_scale(scale)

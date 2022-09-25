@@ -385,6 +385,7 @@ class Ptr(Int):
 	read_array = None
 	write_array = None
 	validate_array = None
+	from_value = None
 
 	def __new__(cls, context=None, arg=0, template=None):
 		return None
@@ -411,6 +412,7 @@ class Ref(Int):
 	read_array = None
 	write_array = None
 	validate_array = None
+	from_value = None
 
 	def __new__(cls, context=None, arg=0, template=None):
 		return None

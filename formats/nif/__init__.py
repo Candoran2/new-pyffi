@@ -522,5 +522,7 @@ class NifFile(Header):
 		with open(filepath, "wb") as stream:
 			cls.to_stream(stream, instance)
 
+__xml_version__ = "0.9.3.0"
+
 if __name__ == "__main__":
 	pass

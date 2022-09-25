@@ -57,10 +57,10 @@ class NiGeometryData:
 		"""Recalculate center and radius of the data."""
 		# in case there are no vertices, set center and radius to zero
 		if len(self.vertices) == 0:
-			self.center.x = 0.0
-			self.center.y = 0.0
-			self.center.z = 0.0
-			self.radius = 0.0
+			self.bounding_sphere.center.x = 0.0
+			self.bounding_sphere.center.y = 0.0
+			self.bounding_sphere.center.z = 0.0
+			self.bounding_sphere.radius = 0.0
 			return
 
 		# find extreme values in x, y, and z direction
@@ -75,9 +75,9 @@ class NiGeometryData:
 		cx = (lowx + highx) * 0.5
 		cy = (lowy + highy) * 0.5
 		cz = (lowz + highz) * 0.5
-		self.center.x = cx
-		self.center.y = cy
-		self.center.z = cz
+		self.bounding_sphere.center.x = cx
+		self.bounding_sphere.center.y = cy
+		self.bounding_sphere.center.z = cz
 
 		# radius is the largest distance from the center
 		r2 = 0.0
@@ -86,7 +86,7 @@ class NiGeometryData:
 			dy = cy - v.y
 			dz = cz - v.z
 			r2 = max(r2, dx*dx+dy*dy+dz*dz)
-		self.radius = r2 ** 0.5
+		self.bounding_sphere.radius = r2 ** 0.5
 
 	def apply_scale(self, scale):
 		"""Apply scale factor on data."""
@@ -95,10 +95,7 @@ class NiGeometryData:
 			v.x *= scale
 			v.y *= scale
 			v.z *= scale
-		self.center.x *= scale
-		self.center.y *= scale
-		self.center.z *= scale
-		self.radius *= scale
+		self.bounding_sphere.apply_scale(scale)
 
 	def get_vertex_hash_generator(
 		self,
