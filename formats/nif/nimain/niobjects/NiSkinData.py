@@ -65,7 +65,4 @@ class NiSkinData:
 			skindata.skin_transform.translation.x *= scale
 			skindata.skin_transform.translation.y *= scale
 			skindata.skin_transform.translation.z *= scale
-			skindata.bounding_sphere_offset.x *= scale
-			skindata.bounding_sphere_offset.y *= scale
-			skindata.bounding_sphere_offset.z *= scale
-			skindata.bounding_sphere_radius *= scale
+			skindata.bounding_sphere.apply_scale(scale)

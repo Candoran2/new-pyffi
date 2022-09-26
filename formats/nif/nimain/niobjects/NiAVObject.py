@@ -90,7 +90,7 @@ class NiAVObject:
 		m.set_scale_rotation_translation(self.scale, self.rotation, self.translation)
 		if not relative_to: return m
 		# find chain from relative_to to self
-		chain = relative_to.find_chain(self, block_type = NifFormat.NiAVObject)
+		chain = relative_to.find_chain(self, block_type = NifFormat.classes.NiAVObject)
 		if not chain:
 			raise ValueError(
 				'cannot find a chain of NiAVObject blocks '
