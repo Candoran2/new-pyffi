@@ -61,3 +61,9 @@ class Vector4:
 	def __ne__(self, rhs):
 		return not self.__eq__(rhs)
 
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		Float.validate_instance(instance.x)
+		Float.validate_instance(instance.y)
+		Float.validate_instance(instance.z)
+		Float.validate_instance(instance.w)

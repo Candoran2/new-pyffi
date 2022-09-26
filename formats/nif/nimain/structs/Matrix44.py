@@ -451,3 +451,22 @@ class Matrix44:
 		entries)."""
 		return max(max(abs(elem) for elem in row)
 				   for row in self.as_list())
+
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		Float.validate_instance(instance.m_11)
+		Float.validate_instance(instance.m_12)
+		Float.validate_instance(instance.m_13)
+		Float.validate_instance(instance.m_14)
+		Float.validate_instance(instance.m_21)
+		Float.validate_instance(instance.m_22)
+		Float.validate_instance(instance.m_23)
+		Float.validate_instance(instance.m_24)
+		Float.validate_instance(instance.m_31)
+		Float.validate_instance(instance.m_32)
+		Float.validate_instance(instance.m_33)
+		Float.validate_instance(instance.m_34)
+		Float.validate_instance(instance.m_41)
+		Float.validate_instance(instance.m_42)
+		Float.validate_instance(instance.m_43)
+		Float.validate_instance(instance.m_44)

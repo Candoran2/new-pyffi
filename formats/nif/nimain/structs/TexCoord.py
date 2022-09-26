@@ -101,3 +101,8 @@ class TexCoord:
 		v.u = -self.u
 		v.v = -self.v
 		return v
+
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		Float.validate_instance(instance.u)
+		Float.validate_instance(instance.v)

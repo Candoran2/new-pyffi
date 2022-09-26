@@ -109,14 +109,12 @@ class NiNode:
 		# increase number of children
 		num_children = self.num_children
 		self.num_children = num_children + 1
-		self.children.update_size()
-		# add the child
+		# add the child (updates size)
+		self.children.append(child)
 		if not front:
-			self.children[num_children] = child
+			return
 		else:
-			for i in range(num_children, 0, -1):
-				self.children[i] = self.children[i-1]
-			self.children[0] = child
+			self.children[:] = [self.children[-1], *self.children[:-1]]
 
 	def remove_child(self, child):
 		"""Remove a block from the child list.
@@ -142,7 +140,7 @@ class NiNode:
 		:type childlist: ``list`` of L{NifFormat.NiAVObject}
 		"""
 		self.num_children = len(childlist)
-		self.children.update_size()
+		self.reset_field("children")
 		for i, child in enumerate(childlist):
 			self.children[i] = child
 
@@ -154,8 +152,7 @@ class NiNode:
 		"""
 		num_effs = self.num_effects
 		self.num_effects = num_effs + 1
-		self.effects.update_size()
-		self.effects[num_effs] = effect
+		self.effects.append(effect)
 
 	def remove_effect(self, effect):
 		"""Remove a block from the effect list.
@@ -181,7 +178,7 @@ class NiNode:
 		:type effectlist: ``list`` of L{NifFormat.NiDynamicEffect}
 		"""
 		self.num_effects = len(effectlist)
-		self.effects.update_size()
+		self.reset_field("effects")
 		for i, effect in enumerate(effectlist):
 			self.effects[i] = effect
 

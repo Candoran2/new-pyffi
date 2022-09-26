@@ -11,7 +11,7 @@ class NiObjectNET:
 		# add to the list
 		num_extra = self.num_extra_data_list
 		self.num_extra_data_list = num_extra + 1
-		self.extra_data_list.update_size()
+		self.reset_field("extra_data_list")
 		self.extra_data_list[num_extra] = extrablock
 		# add to the chain
 		if not self.extra_data:
@@ -41,7 +41,7 @@ class NiObjectNET:
 			if not extraother is extrablock:
 				new_extra_list.append(extraother)
 		self.num_extra_data_list = len(new_extra_list)
-		self.extra_data_list.update_size()
+		self.reset_field("extra_data_list")
 		for i, extraother in enumerate(new_extra_list):
 			self.extra_data_list[i] = extraother
 		# remove from chain
@@ -106,7 +106,7 @@ class NiObjectNET:
 		"""
 		# set up extra data list
 		self.num_extra_data_list = len(extralist)
-		self.extra_data_list.update_size()
+		self.reset_field("extra_data_list")
 		for i, extra in enumerate(extralist):
 			self.extra_data_list[i] = extra
 		# set up extra data chain

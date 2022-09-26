@@ -27,14 +27,10 @@ class ExportString(BaseStruct):
 	def get_size(context, instance, arguments=()):
 		return Byte.get_size(context, instance) + len(instance.encode(errors="surrogateescape"))
 
-	@staticmethod
-	def get_field(instance, key):
-		if key == "length":
-			return len(instance)
-		elif key == "chars":
-			return instance
-
 	@classmethod
 	def validate_instance(cls, instance, context=None, arguments=()):
 		assert isinstance(instance, str)
 		assert len(instance) <= 255
+
+	get_field = None
+	_get_filtered_attribute_list = None

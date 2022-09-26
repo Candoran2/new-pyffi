@@ -33,7 +33,7 @@ class NiTriShapeData:
 		self.num_triangles = n
 		self.num_triangle_points = 3*n
 		self.has_triangles = (n > 0)
-		self.triangles.update_size()
+		self.reset_field("triangles")
 
 		# set triangles to triangles array
 		for dst_t, src_t in zip(self.triangles, triangles):

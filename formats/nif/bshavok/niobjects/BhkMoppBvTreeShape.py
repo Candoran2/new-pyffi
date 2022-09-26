@@ -92,7 +92,7 @@ class BhkMoppBvTreeShape:
 
 		# delete mopp and replace with new data
 		self.mopp_data_size = len(mopp)
-		self.mopp_data.update_size()
+		self.reset_field("mopp_data")
 		for i, b in enumerate(mopp):
 			self.mopp_data[i] = b
 

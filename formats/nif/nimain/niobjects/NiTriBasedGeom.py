@@ -253,8 +253,8 @@ class NiTriBasedGeom:
 			self.data.extra_vectors_flags = 16
 			# XXX used to be 61440
 			# XXX from Sid Meier's Railroad
-			self.data.tangents.update_size()
-			self.data.bitangents.update_size()
+			self.data.reset_field("tangents")
+			self.data.reset_field("bitangents")
 			for vec, data_tans in zip(tan, self.data.tangents):
 				data_tans.x = vec.x
 				data_tans.y = vec.y
@@ -545,8 +545,8 @@ class NiTriBasedGeom:
 			skininst.skin_partition = skinpart
 
 		# set number of partitions
-		skinpart.num_skin_partition_blocks = len(parts)
-		skinpart.skin_partition_blocks.update_size()
+		skinpart.num_partitions = len(parts)
+		skinpart.reset_field("partitions")
 
 		# maximize bone sharing, if requested
 		if maximize_bone_sharing:
@@ -587,7 +587,7 @@ class NiTriBasedGeom:
 		# for Fallout 3, set dismember partition indices
 		if isinstance(skininst, NifFormat.classes.BSDismemberSkinInstance):
 			skininst.num_partitions = len(parts)
-			skininst.partitions.update_size()
+			skininst.reset_field("partitions")
 			lastpart = None
 			for bodypart, part in zip(skininst.partitions, parts):
 				bodypart.body_part = part[2]
@@ -603,7 +603,7 @@ class NiTriBasedGeom:
 				# store part for next iteration
 				lastpart = part
 
-		for skinpartblock, part in zip(skinpart.skin_partition_blocks, parts):
+		for skinpartblock, part in zip(skinpart.partitions, parts):
 			# get sorted list of bones
 			bones = sorted(list(part[0]))
 			triangles = part[1]
@@ -667,17 +667,17 @@ class NiTriBasedGeom:
 			# engine doesn't like that, it seems to want exactly 4 even if there
 			# are fewer
 			skinpartblock.num_weights_per_vertex = maxbonespervertex
-			skinpartblock.bones.update_size()
+			skinpartblock.reset_field("bones")
 			for i, bonenum in enumerate(bones):
 				skinpartblock.bones[i] = bonenum
 			for i in range(len(bones), skinpartblock.num_bones):
 				skinpartblock.bones[i] = 0 # dummy bone slots refer to first bone
 			skinpartblock.has_vertex_map = True
-			skinpartblock.vertex_map.update_size()
+			skinpartblock.reset_field("vertex_map")
 			for i, v in enumerate(vertices):
 				skinpartblock.vertex_map[i] = v
 			skinpartblock.has_vertex_weights = True
-			skinpartblock.vertex_weights.update_size()
+			skinpartblock.reset_field("vertex_weights")
 			for i, v in enumerate(vertices):
 				for j in range(skinpartblock.num_weights_per_vertex):
 					if j < len(weights[v]):
@@ -686,26 +686,26 @@ class NiTriBasedGeom:
 						skinpartblock.vertex_weights[i][j] = 0.0
 			if stripifyblock:
 				skinpartblock.has_faces = True
-				skinpartblock.strip_lengths.update_size()
+				skinpartblock.reset_field("strip_lengths")
 				for i, strip in enumerate(strips):
 					skinpartblock.strip_lengths[i] = len(strip)
-				skinpartblock.strips.update_size()
+				skinpartblock.reset_field("strips")
 				for i, strip in enumerate(strips):
 					for j, v in enumerate(strip):
 						skinpartblock.strips[i][j] = vertices.index(v)
 			else:
 				skinpartblock.has_faces = True
 				# clear strip lengths array
-				skinpartblock.strip_lengths.update_size()
+				skinpartblock.reset_field("strip_lengths")
 				# clear strips array
-				skinpartblock.strips.update_size()
-				skinpartblock.triangles.update_size()
+				skinpartblock.reset_field("strips")
+				skinpartblock.reset_field("triangles")
 				for i, (v_1,v_2,v_3) in enumerate(triangles):
 					skinpartblock.triangles[i].v_1 = vertices.index(v_1)
 					skinpartblock.triangles[i].v_2 = vertices.index(v_2)
 					skinpartblock.triangles[i].v_3 = vertices.index(v_3)
 			skinpartblock.has_bone_indices = True
-			skinpartblock.bone_indices.update_size()
+			skinpartblock.reset_field("bone_indices")
 			for i, v in enumerate(vertices):
 				# the boneindices set keeps track of indices that have not been
 				# used yet

@@ -16,3 +16,10 @@ class Color4:
 		instance.b = in_it[2]
 		instance.a = in_it[3]
 		return instance
+
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		Float.validate_instance(instance.r)
+		Float.validate_instance(instance.g)
+		Float.validate_instance(instance.b)
+		Float.validate_instance(instance.a)

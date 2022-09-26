@@ -1,4 +1,4 @@
-class Color4:
+class Color3:
 # START_CLASS
 
 	def __init__(self, context=None, arg=0, template=None, set_default=True):
@@ -14,3 +14,9 @@ class Color4:
 		instance.g = in_it[1]
 		instance.b = in_it[2]
 		return instance
+
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		Float.validate_instance(instance.r)
+		Float.validate_instance(instance.g)
+		Float.validate_instance(instance.b)

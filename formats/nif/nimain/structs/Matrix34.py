@@ -101,3 +101,17 @@ class Matrix34:
 	def __ne__(self, mat):
 		return not self.__eq__(mat)
 
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		Float.validate_instance(instance.m_11)
+		Float.validate_instance(instance.m_12)
+		Float.validate_instance(instance.m_13)
+		Float.validate_instance(instance.m_14)
+		Float.validate_instance(instance.m_21)
+		Float.validate_instance(instance.m_22)
+		Float.validate_instance(instance.m_23)
+		Float.validate_instance(instance.m_24)
+		Float.validate_instance(instance.m_31)
+		Float.validate_instance(instance.m_32)
+		Float.validate_instance(instance.m_33)
+		Float.validate_instance(instance.m_34)

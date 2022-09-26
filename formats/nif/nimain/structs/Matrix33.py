@@ -326,3 +326,14 @@ class Matrix33:
 		return max(max(abs(elem) for elem in row)
 				   for row in self.as_list())
 
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		Float.validate_instance(instance.m_11)
+		Float.validate_instance(instance.m_12)
+		Float.validate_instance(instance.m_13)
+		Float.validate_instance(instance.m_21)
+		Float.validate_instance(instance.m_22)
+		Float.validate_instance(instance.m_23)
+		Float.validate_instance(instance.m_31)
+		Float.validate_instance(instance.m_32)
+		Float.validate_instance(instance.m_33)

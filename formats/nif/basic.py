@@ -328,12 +328,12 @@ class HeaderString(LineString):
 	@classmethod
 	def to_stream(cls, stream, instance=None):
 		context = stream.context
-		instance = cls.version_string(context)
+		instance = cls.version_string(context.version, context.modification)
 		stream.write(instance.encode(errors="surrogateescape"))
 		stream.write(b'\x0A')
 	
 	@staticmethod
-	def version_string(context):
+	def version_string(version, modification=None):
 		"""Transforms version number into a version string.
 
 		>>> NifFormat.HeaderString.version_string(0x03000300)
@@ -354,8 +354,6 @@ class HeaderString(LineString):
 		...										  modification="jmihs1")
 		'Joymaster HS1 Object Format - (JMI), Version 20.3.0.9'
 		"""
-		version = context.version
-		modification = context.modification
 		if version == -1 or version is None:
 			raise ValueError('No string for version %s.'%version)
 		if modification == "neosteam":

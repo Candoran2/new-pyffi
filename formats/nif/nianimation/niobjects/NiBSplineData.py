@@ -1,3 +1,8 @@
+# START_GLOBALS
+import itertools
+# END_GLOBALS
+
+
 class NiBSplineData:
 # START_CLASS
 	"""
@@ -60,12 +65,8 @@ class NiBSplineData:
 			self.num_short_control_points += num_elements * element_size
 		else:
 			raise ValueError("internal error while appending data")
-		# update size
-		controlpoints.update_size()
-		# store the data
-		for element, datum in enumerate(data):
-			for index, value in enumerate(datum):
-				controlpoints[offset + element * element_size + index] = value
+		flattened_data = itertools.chain.from_iterable(data)
+		controlpoints.extend(flattened_data)
 		# return the offset
 		return offset
 

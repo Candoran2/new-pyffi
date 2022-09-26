@@ -206,3 +206,9 @@ class Vector3:
 
 	def __ne__(self, x):
 		return not self.__eq__(x)
+
+	@staticmethod
+	def validate_instance(instance, context=None, arguments=()):
+		Float.validate_instance(instance.x)
+		Float.validate_instance(instance.y)
+		Float.validate_instance(instance.z)

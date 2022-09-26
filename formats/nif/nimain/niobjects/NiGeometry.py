@@ -93,14 +93,13 @@ class NiGeometry:
 
 		bone_index = skininst.num_bones
 		skininst.num_bones = bone_index+1
-		skininst.bones.update_size()
-		skininst.bones[bone_index] = bone
+		skininst.bones.append(bone)
 		skindata.num_bones = bone_index+1
-		skindata.bone_list.update_size()
-		skinbonedata = skindata.bone_list[bone_index]
+		skinbonedata = skindata.bone_list.dtype(self.context, skindata.bone_list.arg, skindata.bone_list.template)
+		skindata.bone_list.append(skinbonedata)
 		# set vertex weights
 		skinbonedata.num_vertices = len(vert_weights)
-		skinbonedata.vertex_weights.update_size()
+		skinbonedata.reset_field("vertex_weights")
 		for i, (vert_index, vert_weight) in enumerate(iter(vert_weights.items())):
 			skinbonedata.vertex_weights[i].index = vert_index
 			skinbonedata.vertex_weights[i].weight = vert_weight
@@ -172,7 +171,7 @@ class NiGeometry:
 			for child in bone_block.children:
 				bone_parent.add_child(child)
 			bone_block.num_children = 0
-			bone_block.children.update_size() # = remove_child on each child
+			bone_block.reset_field("children")
 			# set new bone transform
 			bone_block.set_transform(bone_block.get_transform(skelroot))
 			# reparent bone block

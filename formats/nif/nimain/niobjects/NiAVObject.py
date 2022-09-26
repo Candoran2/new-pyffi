@@ -1,6 +1,4 @@
 # START_GLOBALS
-from itertools import chain
-
 import generated.formats.nif as NifFormat
 # END_GLOBALS
 
@@ -45,8 +43,7 @@ class NiAVObject:
 		"""
 		num_props = self.num_properties
 		self.num_properties = num_props + 1
-		self.properties.update_size()
-		self.properties[num_props] = prop
+		self.properties.append(prop)
 
 	def remove_property(self, prop):
 		"""Remove the given property to the property list.
@@ -72,7 +69,7 @@ class NiAVObject:
 		:type proplist: ``list`` of L{NifFormat.NiProperty}
 		"""
 		self.num_properties = len(proplist)
-		self.properties.update_size()
+		self.reset_field("properties")
 		for i, prop in enumerate(proplist):
 			self.properties[i] = prop
 
