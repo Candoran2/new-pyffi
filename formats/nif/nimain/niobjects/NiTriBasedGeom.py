@@ -784,10 +784,10 @@ class NiTriBasedGeom:
 			center *= skindatablock.get_transform()
 
 			# save data
-			skindatablock.bounding_sphere_offset.x = center.x
-			skindatablock.bounding_sphere_offset.y = center.y
-			skindatablock.bounding_sphere_offset.z = center.z
-			skindatablock.bounding_sphere_radius = radius
+			skindatablock.bounding_sphere.center.x = center.x
+			skindatablock.bounding_sphere.center.y = center.y
+			skindatablock.bounding_sphere.center.z = center.z
+			skindatablock.bounding_sphere.radius = radius
 
 	def get_interchangeable_tri_shape(self, triangles=None):
 		"""Returns a NiTriShape block that is geometrically
