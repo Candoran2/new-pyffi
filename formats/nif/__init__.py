@@ -13,6 +13,7 @@ from generated.formats.nif.nimain.niobjects.NiObject import NiObject
 from generated.formats.nif.nimain.structs.Header import Header
 from generated.formats.nif.nimain.structs.Footer import Footer
 from generated.formats.nif.nimain.structs.SizedString import SizedString
+from generated.formats.nif.nimain.structs.FilePath import FilePath
 from generated.formats.nif.nimain.structs.String import String
 from generated.formats.nif.versions import has_bs_ver
 
@@ -293,27 +294,42 @@ class NifFile(Header):
 	def get_global_child_nodes(self, edge_filter=()):
 		return (root for root in self.roots)
 
-	@classmethod
-	def get_strings(cls, instance):
+	@staticmethod
+	def get_string_classes(version):
+		if version > 0x14010003:
+			return (String, FilePath, NiFixedString)
+		else:
+			return (NiFixedString,)
+
+	def get_strings(self, instance):
 		"""Get all strings in the structure."""
-		condition_function = lambda x: issubclass(x[1], (String, NiFixedString))
+		str_classes = self.get_string_classes(self.version)
+		condition_function = lambda x: issubclass(x[1], str_classes)
 		for val in get_condition_values_recursive(instance, condition_function):
 			if val:
 				yield val
 
-	@classmethod
-	def get_recursive_strings(cls, instance):
+	def get_recursive_strings(self, instance):
 		"""Get all strings in the entire tree"""
-		condition_function = lambda x: issubclass(x[1], (String, NiFixedString, Ref))
-		for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(instance), instance, condition_function):
-			value = s_type.get_field(s_inst, f_name)
-			if issubclass(f_type, Ref):
-				if value is not None:
-					yield from cls.get_recursive_strings(value)
-			else:
-				# must be a string type
-				if value:
-					yield value
+
+		# The condition where the header has a string list is similar, but not the same as where String and FilePath have a
+		# NiFixedString. Therefore, it is theoretically possible to have a header with a string list where Strings and
+		# FilePaths do not reference that. However, it is not possible with the currently know valid nif versions.
+		str_classes = self.get_string_classes(self.version)
+
+		def _get_recursive_strings_block(block):
+			condition_function = lambda x: issubclass(x[1], (*str_classes, Ref))
+			for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(block), block, condition_function):
+				value = s_type.get_field(s_inst, f_name)
+				if issubclass(f_type, Ref):
+					if value is not None:
+						yield from _get_recursive_strings_block(value)
+				else:
+					# must be a string type
+					if value:
+						yield value
+
+		yield from _get_recursive_strings_block(instance)
 
 	def resolve_references(self):
 		# go through every NiObject and replace references and pointers with the
@@ -450,7 +466,7 @@ class NifFile(Header):
 		# create/update the block list before anything else
 		for root in instance.roots:
 			instance._makeBlockList(root, instance._block_index_dct, block_type_list, block_type_dct)
-			instance._string_list.extend(cls.get_recursive_strings(root))
+			instance._string_list.extend(instance.get_recursive_strings(root))
 # 			recursive strings (at least for test maplestory 2 (30.2.0.3) nif) is more true to base game order
 # 			than get_strings per block
 # 			for block in cls.tree(root):
@@ -463,7 +479,7 @@ class NifFile(Header):
 		instance.block_type_index = [block_type_dct[block] for block in instance.blocks]
 		instance.num_strings = len(instance._string_list)
 		if instance._string_list:
-			instance.max_string_length = max([len(s) for s in instance._string_list])
+			instance.max_string_length = max([SizedString.get_size(instance, s) for s in instance._string_list])
 		else:
 			instance.max_string_length = 0
 		instance.strings[:] = instance._string_list
