@@ -479,7 +479,7 @@ class NifFile(Header):
 		instance.block_type_index = [block_type_dct[block] for block in instance.blocks]
 		instance.num_strings = len(instance._string_list)
 		if instance._string_list:
-			instance.max_string_length = max([SizedString.get_size(instance, s) for s in instance._string_list])
+			instance.max_string_length = max([SizedString.get_size(instance, s) - 4 for s in instance._string_list])
 		else:
 			instance.max_string_length = 0
 		instance.strings[:] = instance._string_list
