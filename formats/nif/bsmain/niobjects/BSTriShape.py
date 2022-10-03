@@ -19,3 +19,7 @@ class BSTriShape:
 				if self.skin.skin_partition:
 					vertex_data = self.skin.skin_partition.vertex_data
 		return vertex_data
+
+	def is_skin(self):
+		"""Returns True if geometry is skinned."""
+		return self.skin != None

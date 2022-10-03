@@ -64,9 +64,23 @@ class NiGeometry:
 	>>> [child.name for child in skelroot.children]
 	[b'geom', b'bone1', b'bone21', b'bone2', b'bone22', b'bone211']
 	"""
+
 	def is_skin(self):
 		"""Returns True if geometry is skinned."""
 		return self.skin_instance != None
+
+	def get_triangles(self):
+		"""Returns the triangles that describe its mesh information, either from its data or its skin"""
+		if self.is_skin():
+			skin_partition = self.get_skin_partition()
+			if skin_partition:
+				if skin_partition.partitions:
+					if skin_partition.partitions[0].has_faces:
+						triangles = []
+						for partition in skin_partition.partitions:
+							triangles += list(partition.get_mapped_triangles())
+						return triangles
+		return self.data.get_triangles()
 
 	def _validate_skin(self):
 		"""Check that skinning blocks are valid. Will raise NifError exception
