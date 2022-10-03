@@ -233,7 +233,7 @@ class NiGeometry:
 		# we must get weights from the partition
 		else:
 			skinpartition = skininst.skin_partition
-			for block in skinpartition.skin_partition_blocks:
+			for block in skinpartition.partitions:
 				# get transforms for this block
 				block_bone_transforms = [bone_transforms[i] for i in block.bones]
 
@@ -255,7 +255,7 @@ class NiGeometry:
 
 		for i, s in enumerate(sumweights):
 			if abs(s - 1.0) > 0.01: 
-				logging.getLogger("pyffi.nif.nigeometry").warn(
+				logging.getLogger("generated.nif.nigeometry").warn(
 					"vertex %i has weights not summing to one" % i)
 
 		return vertices, normals

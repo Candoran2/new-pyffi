@@ -6,7 +6,7 @@ class BSDismemberSkinInstance:
 		triangles = []
 		trianglepartmap = []
 		for bodypart, skinpartblock in zip(
-			self.partitions, self.skin_partition.skin_partition_blocks):
+			self.partitions, self.skin_partition.partitions):
 			part_triangles = list(skinpartblock.get_mapped_triangles())
 			triangles += part_triangles
 			trianglepartmap += [bodypart.body_part] * len(part_triangles)
