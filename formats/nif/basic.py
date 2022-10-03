@@ -31,7 +31,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			cls.pack = struct.pack
 			cls.unpack = struct.unpack
 			cls.size = struct.size
-			cls.dtype = np.dtype(struct.format)
+			cls.np_dtype = np.dtype(struct.format)
 
 		@classmethod
 		def update_struct(cls, context):
@@ -62,13 +62,13 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 		@classmethod
 		def create_array(cls, shape, default=None, context=None, arg=0, template=None):
 			if default:
-				return np.full(shape, default, cls.dtype)
+				return np.full(shape, default, cls.np_dtype)
 			else:
-				return np.zeros(shape, cls.dtype)
+				return np.zeros(shape, cls.np_dtype)
 
 		@classmethod
 		def read_array(cls, stream, shape, context=None, arg=0, template=None):
-			array = empty(shape, cls.dtype)
+			array = empty(shape, cls.np_dtype)
 			stream.readinto(array)
 			return array
 
@@ -76,10 +76,10 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 		def write_array(cls, stream, instance):
 			# check that it is a numpy array
 			if not isinstance(instance, np.ndarray):
-				instance = np.array(instance, cls.dtype)
+				instance = np.array(instance, cls.np_dtype)
 			# cast if wrong incoming dtype
 			elif instance.dtype != cls.dtype:
-				instance = instance.astype(cls.dtype)
+				instance = instance.astype(cls.np_dtype)
 			stream.write(instance.tobytes())
 
 		@classmethod
@@ -91,7 +91,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			pack = cls.pack
 			unpack = cls.unpack
 			size = cls.size
-			dtype = cls.dtype
+			dtype = cls.np_dtype
 
 			def read_value():
 				return unpack(read(size))[0]
@@ -122,7 +122,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 
 		@classmethod
 		def _from_xml_array(cls, instance, elem):
-			return np.fromstring(elem.text, dtype=cls.dtype, sep=" ")
+			return np.fromstring(elem.text, dtype=cls.np_dtype, sep=" ")
 
 		@staticmethod
 		def to_xml(elem, prop, instance, arguments, debug):
@@ -145,7 +145,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 		@classmethod
 		def validate_array(cls, instance, context=None, arguments=()):
 			assert instance.shape == arguments[2]
-			assert instance.dtype.char == cls.dtype.char
+			assert instance.np_dtype.char == cls.np_dtype.char
 
 
 	ConstructedClass.set_struct(ConstructedClass._le_struct)
@@ -160,7 +160,7 @@ Uint = ve_class_from_struct(Struct("<I"), lambda value: int(value) % 4294967296,
 Int = ve_class_from_struct(Struct("<i"), lambda value: (int(value) + 2147483648) % 4294967296 - 2147483648, name='int')
 Ushort = ve_class_from_struct(Struct("<H"), lambda value: int(value) % 65536, name='ushort')
 Short = ve_class_from_struct(Struct("<h"), lambda value: (int(value) + 32768) % 65536 - 32768, name='short')
-class Byte(basic.Byte): pass
+class Byte(basic.Ubyte): pass
 class FileVersion(Ulittle32): pass
 Float = ve_class_from_struct(Struct("<f"), float, name='float')
 Hfloat = ve_class_from_struct(Struct("<e"), float, name='hfloat')
@@ -377,16 +377,15 @@ class HeaderString(LineString):
 		else:
 			return "%s File Format, Version %s" % (s, v)
 
-class Ptr(Int):
+class Ptr:
 	# remove the array writing functions, because otherwise you can't assign the resolved blocks
-	create_array = None
-	read_array = None
-	write_array = None
-	validate_array = None
-	from_value = None
-
 	def __new__(cls, context=None, arg=0, template=None):
 		return None
+
+	@classmethod
+	def from_stream(cls, stream, context=None, arg=0, template=None):
+		"""Return an int - conversion to the linked NiObject will happen after the complete file is read"""
+		return Int.from_stream(stream, context, arg, template)
 
 	@classmethod
 	def to_stream(cls, stream, instance):
@@ -404,16 +403,15 @@ class Ptr(Int):
 	def validate_instance(instance, context=None, arguments=()):
 		assert ((instance is None) or isinstance(instance, arguments[1]))
 
-class Ref(Int):
-	# remove the array writing functions, because otherwise you can't assign the resolved blocks
-	create_array = None
-	read_array = None
-	write_array = None
-	validate_array = None
-	from_value = None
+class Ref:
 
 	def __new__(cls, context=None, arg=0, template=None):
 		return None
+
+	@classmethod
+	def from_stream(cls, stream, context=None, arg=0, template=None):
+		"""Return an int - conversion to the linked NiObject will happen after the complete file is read"""
+		return Int.from_stream(stream, context, arg, template)
 
 	@classmethod
 	def to_stream(cls, stream, instance):
@@ -469,7 +467,7 @@ class NiFixedString:
 	def validate_instance(instance, context=None, arguments=()):
 		assert isinstance(instance, str)
 
-switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, Float, Hfloat, BlockTypeIndex, Bool, Ptr, Ref, StringOffset]
+switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, Float, Hfloat, BlockTypeIndex, Bool, StringOffset]
 
 basic_map = {"Uint64": Uint64,
 			 "Int64": Int64,

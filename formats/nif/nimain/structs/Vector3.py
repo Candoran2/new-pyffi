@@ -36,12 +36,6 @@ class Vector3:
 				self.y = vec.y
 			if hasattr(vec, "z"):
 				self.z = vec.z
-			
-	def __iter__(self):
-		# just a convenience so we can do: x,y,z = Vector3()
-		yield self.x
-		yield self.y
-		yield self.z
 	
 	def as_list(self):
 		return [self.x, self.y, self.z]
