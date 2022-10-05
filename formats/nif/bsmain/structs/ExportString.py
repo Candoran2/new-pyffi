@@ -34,3 +34,7 @@ class ExportString(BaseStruct):
 
 	get_field = None
 	_get_filtered_attribute_list = None
+
+	@staticmethod
+	def from_value(value):
+		return str(value)

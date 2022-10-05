@@ -1,13 +1,24 @@
 class BSTriShape:
 # START_CLASS
 
+	def apply_scale(self, scale):
+		super().apply_scale(scale)
+		for v_data in self.vertex_data:
+			v = v_data.vertex
+			v.x *= scale
+			v.y *= scale
+			v.z *= scale
+
 	def get_triangles(self):
 		"""Return triangles"""
 		if self.vertex_desc.vertex_attributes.skinned:
 			# triangles are found in the partition
 			triangles = []
 			if self.skin:
-				return self.skin.get_dismember_partitions[0]
+				for partition in self.skin.skin_partition.partitions:
+                    # there is a vertex map, but it doesn't seem to be used
+					if partition.has_faces:
+						triangles.extend(partition.triangles)
 			return triangles
 		else:
 			return self.triangles
@@ -23,3 +34,11 @@ class BSTriShape:
 	def is_skin(self):
 		"""Returns True if geometry is skinned."""
 		return self.skin != None
+
+	@property
+	def skin_instance(self):
+		return self.skin
+
+	@skin_instance.setter
+	def skin_instance(self, value):
+		self.skin = value

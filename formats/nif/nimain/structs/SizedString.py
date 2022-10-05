@@ -34,3 +34,7 @@ class SizedString:
 	def validate_instance(cls, instance, context=None, arguments=()):
 		assert isinstance(instance, str)
 		assert len(instance) <= 4294967295
+
+	@staticmethod
+	def from_value(value):
+		return str(value)

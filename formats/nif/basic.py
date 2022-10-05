@@ -78,7 +78,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			if not isinstance(instance, np.ndarray):
 				instance = np.array(instance, cls.np_dtype)
 			# cast if wrong incoming dtype
-			elif instance.dtype != cls.dtype:
+			elif instance.dtype != cls.np_dtype:
 				instance = instance.astype(cls.np_dtype)
 			stream.write(instance.tobytes())
 
@@ -165,6 +165,7 @@ class FileVersion(Ulittle32): pass
 Float = ve_class_from_struct(Struct("<f"), float, name='float')
 Hfloat = ve_class_from_struct(Struct("<e"), float, name='hfloat')
 
+
 class Char:
 	def __new__(cls, context=None, arg=0, template=None):
 		return chr(0)
@@ -206,7 +207,57 @@ class Char:
 		lines_new = [lines[0], ] + ["\t" * indent + line for line in lines[1:]]
 		return "\n".join(lines_new)
 
+
+class Normbyte:
+
+	def __new__(cls, context=None, arg=0, template=None):
+		return 0.0
+
+	@staticmethod
+	def from_value(value):
+		return (float(value) + 1) % 2 - 1
+
+	@classmethod
+	def from_stream(cls, stream, context=None, arg=0, template=None):
+		return (Byte.from_stream(stream, context, arg, template) / 127.5) - 1.0
+
+	@classmethod
+	def to_stream(cls, stream, instance):
+		Byte.to_stream(stream, int(round((instance + 1.0) * 127.5, 0)))
+
+	@staticmethod
+	def get_size(context, instance, arguments=()):
+		return 1
+
+	@classmethod
+	def validate_instance(cls, instance, context=None, arguments=()):
+		assert instance >= -1.0
+		assert instance <= 1.0
+
+	@classmethod
+	def create_array(cls, shape, default=None, context=None, arg=0, template=None):
+		if default:
+			return np.full(shape, default, float)
+		else:
+			return np.zeros(shape, float)
+
+	@classmethod
+	def read_array(cls, stream, shape, context=None, arg=0, template=None):
+		array = np.empty(shape, Byte.np_dtype)
+		stream.readinto(array)
+		return (array.astype(float) / 127.0) - 1.0
+
+	@classmethod
+	def write_array(cls, stream, instance):
+		# check that it is a numpy array
+		if not isinstance(instance, np.ndarray):
+			instance = np.array(instance, float)
+		# don't need to cast specifically to float, but do need to convert to byte for writing
+		instance = np.round((instance + 1.0) * 127.5).astype(Byte.np_type)
+		stream.write(instance.tobytes())
+
 class BlockTypeIndex(Short): pass
+
 
 class Bool(ve_class_from_struct(Struct('<q'), lambda value: (int(value) + 2147483648) % 4294967296 - 2147483648)):
 	"""A boolean; 32-bit from 4.0.0.2, and 8-bit from 4.1.0.1 on."""
@@ -243,6 +294,7 @@ class Bool(ve_class_from_struct(Struct('<q'), lambda value: (int(value) + 214748
 		def validate_array(cls, instance, context=None, arguments=()):
 			assert instance.shape == arguments[2]
 			assert instance.dtype.char in ("b", "i")
+
 
 class LineString:
 	"""A variable length string that ends with a newline character (0x0A)."""
@@ -288,6 +340,7 @@ class LineString:
 	def validate_instance(cls, instance, context=None, arguments=()):
 		assert(isinstance(instance, str))
 		assert(len(instance.encode(errors="surrogateescape")) <= cls.MAX_LEN)
+
 
 class HeaderString(LineString):
 	"""
@@ -377,6 +430,7 @@ class HeaderString(LineString):
 		else:
 			return "%s File Format, Version %s" % (s, v)
 
+
 class Ptr:
 	# remove the array writing functions, because otherwise you can't assign the resolved blocks
 	def __new__(cls, context=None, arg=0, template=None):
@@ -393,7 +447,7 @@ class Ptr:
 			index = -1
 		else:
 			index = stream.context._block_index_dct[instance]
-		super().to_stream(stream, index)
+		Int.to_stream(stream, index)
 
 	@staticmethod
 	def fmt_member(member, indent=0):
@@ -402,6 +456,11 @@ class Ptr:
 	@staticmethod
 	def validate_instance(instance, context=None, arguments=()):
 		assert ((instance is None) or isinstance(instance, arguments[1]))
+
+	@classmethod
+	def get_size(cls, context, instance, arguments=()):
+		return Int.get_size(context, 0, arguments=())
+
 
 class Ref:
 
@@ -419,7 +478,7 @@ class Ref:
 			index = -1
 		else:
 			index = stream.context._block_index_dct[instance]
-		super().to_stream(stream, index)
+		Int.to_stream(stream, index)
 
 	@staticmethod
 	def fmt_member(member, indent=0):
@@ -429,7 +488,14 @@ class Ref:
 	def validate_instance(instance, context=None, arguments=()):
 		assert ((instance is None) or isinstance(instance, arguments[1]))
 
+	@classmethod
+	def get_size(cls, context, instance, arguments=()):
+		return Int.get_size(context, 0, arguments=())
+
+
 class StringOffset(Uint): pass #although a different class, no different (except not countable)
+
+
 class NiFixedString:
 
 	def __new__(self, context, arg=0, template=None, set_default=True):
@@ -467,6 +533,7 @@ class NiFixedString:
 	def validate_instance(instance, context=None, arguments=()):
 		assert isinstance(instance, str)
 
+
 switchable_endianness = [Uint64, Int64, Uint, Int, Ushort, Short, Float, Hfloat, BlockTypeIndex, Bool, StringOffset]
 
 basic_map = {"Uint64": Uint64,
@@ -478,6 +545,7 @@ basic_map = {"Uint64": Uint64,
 			 "Short": Short,
 			 "Char": Char,
 			 "Byte": Byte,
+			 "Normbyte": Normbyte,
 			 "Bool": Bool,
 			 "BlockTypeIndex": BlockTypeIndex,
 			 "FileVersion": FileVersion,
