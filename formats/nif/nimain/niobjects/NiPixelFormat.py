@@ -1,6 +1,7 @@
 # START_GLOBALS
 import generated.formats.nif as NifFormat
 from generated.formats.dds import DdsFile
+from generated.formats.dds.enums.FourCC import FourCC
 # END_GLOBALS
 
 class NiPixelFormat:
