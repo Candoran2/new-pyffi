@@ -1,8 +1,9 @@
 # START_GLOBALS
 import logging
 
+import generated.formats.nif as NifFormat
+
 _b00 = b"\x00"
-encoding = "utf-8"
 # END_GLOBALS
 
 class StringPalette:
@@ -29,7 +30,7 @@ class StringPalette:
 			...
 		ValueError: ...
 		"""
-		palette_bytes = self.palette.encode(encoding)
+		palette_bytes = NifFormat.encode(self.palette)
 		# check that offset isn't too large
 		if offset >= len(palette_bytes):
 			raise ValueError(
@@ -81,13 +82,13 @@ class StringPalette:
 		>>> print(pal.get_string(4).decode("ascii"))
 		def
 		"""
-		palette_bytes = self.palette.encode("utf8")
+		palette_bytes = NifFormat.encode(self.palette)
 		# empty text
 		if not text:
 			return -1
 		# convert text to bytes if necessary
 		if isinstance(text, str):
-			text = text.encode(encoding)
+			text = NifFormat.encode(text)
 		# check if string is already in the palette
 		# ... at the start
 		if text + _b00 == palette_bytes[:len(text) + 1]:
@@ -100,8 +101,8 @@ class StringPalette:
 		if offset == -1:
 			offset = len(palette_bytes)
 			palette_bytes = palette_bytes + text + _b00
-			self.palette = palette_bytes.decode(encoding)
-			self.length += len(text) + 1
+			self.palette = NifFormat.safe_decode(palette_bytes)
+			self.length = len(palette_bytes)
 		# return the offset
 		return offset
 
@@ -122,5 +123,5 @@ class StringPalette:
 		>>> print(repr(pal.palette.decode("ascii")).lstrip("u"))
 		''
 		"""
-		self.palette = "" # empty bytes object
+		self.palette = "" # empty string object
 		self.length = 0

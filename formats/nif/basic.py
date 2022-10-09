@@ -5,6 +5,7 @@ from struct import Struct
 from generated.array import Array
 from generated.base_struct import StructMetaClass
 import generated.formats.base.basic as basic
+import generated.formats.nif as NifFormat
 from generated.formats.nif.versions import version_from_str
 from generated.io import MAX_LEN
 
@@ -145,7 +146,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 		@classmethod
 		def validate_array(cls, instance, context=None, arguments=()):
 			assert instance.shape == arguments[2]
-			assert instance.np_dtype.char == cls.np_dtype.char
+			assert instance.dtype.char == cls.np_dtype.char
 
 
 	ConstructedClass.set_struct(ConstructedClass._le_struct)
@@ -315,16 +316,16 @@ class LineString:
 				raise ValueError('Reached end of file before end of {cls.__name__}')
 		else:
 			val = val[:-1]
-		return val.decode(errors="surrogateescape")
+		return NifFormat.safe_decode(val)
 
 	@staticmethod
 	def to_stream(stream, instance):
-		stream.write(instance.encode(errors="surrogateescape"))
+		stream.write(NifFormat.encode(instance))
 		stream.write(b'\x0A')
 
 	@staticmethod
 	def get_size(context, instance, arguments=()):
-		return len(instance.encode(errors="surrogateescape")) + 1
+		return len(NifFormat.encode(instance)) + 1
 
 	@staticmethod
 	def from_value(value, context=None, arg=0, template=None):
@@ -339,7 +340,7 @@ class LineString:
 	@classmethod
 	def validate_instance(cls, instance, context=None, arguments=()):
 		assert(isinstance(instance, str))
-		assert(len(instance.encode(errors="surrogateescape")) <= cls.MAX_LEN)
+		assert(len(NifFormat.encode(instance)) <= cls.MAX_LEN)
 
 
 class HeaderString(LineString):
@@ -382,8 +383,7 @@ class HeaderString(LineString):
 	def to_stream(cls, stream, instance=None):
 		context = stream.context
 		instance = cls.version_string(context.version, context.modification)
-		stream.write(instance.encode(errors="surrogateescape"))
-		stream.write(b'\x0A')
+		super().to_stream(stream, instance)
 	
 	@staticmethod
 	def version_string(version, modification=None):

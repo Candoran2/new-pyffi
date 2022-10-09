@@ -1,6 +1,8 @@
 # START_GLOBALS
 import generated.formats.nif as NifFormat
 from generated.formats.nif.basic import Ref, Ptr
+from generated.bitfield import BasicBitfield
+from generated.base_enum import BaseEnum
 # END_GLOBALS
 
 class NiObject:
@@ -95,6 +97,33 @@ class NiObject:
 		for child in type(self).get_refs(self):
 			for block in child.tree(block_type = block_type, follow_all = follow_all):
 				yield block
+
+	def get_hash(self):
+        # conversion of the original pyffi get_hash function which was a method on every class
+		def get_struct_hash(struct_type, struct_instance, args=()):
+			hsh = []
+			for f_name, f_type, f_args, _ in struct_type._get_filtered_attribute_list(struct_instance, *args[3:4]):
+				field_value = struct_type.get_field(struct_instance, f_name)
+				if issubclass(f_type, (BaseEnum, BasicBitfield)):
+					# these can be converted to ints
+					f_hash = int(field_value)
+				elif issubclass(f_type, Ref):
+					# a ref is none or points to a NiObject
+					if field_value is None:
+						f_hash = field_value
+					else:
+						f_hash = field_value.get_hash()
+				elif issubclass(f_type, Ptr):
+					# can't use get_hash on the niobject in the pointer to prevent infinite recursion
+					f_hash = None
+				elif callable(getattr(f_type, "_get_attribute_list", None)):
+					f_hash = get_struct_hash(f_type, field_value, f_args)
+				else:
+					# assume it is a basic-like, i.e. immutable objects like numbers or strings
+					f_hash = field_value
+				hsh.append((f_name, f_hash))
+			return tuple(hsh)
+		return get_struct_hash(type(self), self)
 
 	def _validateTree(self):
 		"""Raises ValueError if there is a cycle in the tree."""

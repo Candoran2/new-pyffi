@@ -1,3 +1,6 @@
+# START_GLOBALS
+import generated.formats.nif as NifFormat
+# END_GLOBALS
 from generated.formats.nif.basic import Ushort
 
 class SizedString16:
@@ -11,16 +14,17 @@ class SizedString16:
 	def from_stream(stream, context=None, arg=0, template=None):
 		length = Ushort.from_stream(stream)
 		chars = stream.read(length)
-		return chars.decode(errors="surrogateescape")
+		return NifFormat.safe_decode(chars)
 
 	@staticmethod
 	def to_stream(stream, instance):
-		Ushort.to_stream(stream, len(instance))
-		stream.write(instance.encode(errors="surrogateescape"))
+		encoded_instance = NifFormat.encode(instance)
+		Ushort.to_stream(stream, len(encoded_instance))
+		stream.write(encoded_instance)
 
 	@staticmethod
 	def get_size(context, instance, arguments=()):
-		string_len = len(instance.encode(errors="surrogateescape"))
+		string_len = len(NifFormat.encode(instance))
 		return Ushort.get_size(context, string_len) + string_len
 
 	get_field = None
@@ -33,7 +37,7 @@ class SizedString16:
 	@classmethod
 	def validate_instance(cls, instance, context=None, arguments=()):
 		assert isinstance(instance, str)
-		assert len(instance) <= 65535
+		assert len(NifFormat.encode(instance)) <= 65535
 
 	@staticmethod
 	def from_value(value):

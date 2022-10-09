@@ -69,6 +69,20 @@ def get_condition_values_recursive(instance, condition_function, arguments=(), i
 		val = s_type.get_field(s_inst, f_name)
 		yield val
 
+
+def safe_decode(b: bytes, encodings=('ascii', 'utf8', 'latin1', 'shift-jis')) -> str:
+	for encoding in encodings:
+		try:
+			return b.decode(encoding)
+		except UnicodeDecodeError:
+			pass
+	return b.decode("ascii", errors="surrogateescape")
+
+
+def encode(s: str, encoding='utf-8') -> bytes:
+	# since utf-8 contains all characters of the other encodings, encoding to it is a safe guess
+	return s.encode("utf-8", errors="surrogateescape")
+
 # filter for recognizing NIF files by extension
 # .kf are NIF files containing keyframes
 # .kfa are NIF files containing keyframes in DAoC style
@@ -424,6 +438,9 @@ class NifFile(Header):
 				ver, modification = HeaderString.version_modification_from_headerstring(field_value)
 				instance.version = ver
 				instance.modification = modification
+			if field_name == "version":
+				# update every basic - we now know the version
+				[basic.update_struct(instance) for basic in switchable_endianness]
 			elif field_name == "endian_type":
 				# update every basic - we now know the endianness and the version
 				[basic.update_struct(instance) for basic in switchable_endianness]
@@ -475,15 +492,19 @@ class NifFile(Header):
 
 		instance.num_blocks = len(instance.blocks)
 		instance.num_block_types = len(block_type_list)
+		instance.reset_field("block_types")
 		instance.block_types[:] = block_type_list
-		instance.block_type_index = [block_type_dct[block] for block in instance.blocks]
+		instance.reset_field("block_type_index")
+		instance.block_type_index[:] = [block_type_dct[block] for block in instance.blocks]
 		instance.num_strings = len(instance._string_list)
 		if instance._string_list:
 			instance.max_string_length = max([SizedString.get_size(instance, s) - 4 for s in instance._string_list])
 		else:
 			instance.max_string_length = 0
+		instance.reset_field("strings")
 		instance.strings[:] = instance._string_list
-		instance.block_size = [type(block).get_size(instance, block) for block in instance.blocks]
+		instance.reset_field("block_size")
+		instance.block_size[:] = [type(block).get_size(instance, block) for block in instance.blocks]
 
 		# update the basics before doing any writing
 		[basic.update_struct(instance) for basic in switchable_endianness]
