@@ -1,8 +1,9 @@
 # START_GLOBALS
-import generated.formats.nif as NifFormat
-from generated.formats.nif.basic import Ref, Ptr
+from generated.array import Array
 from generated.bitfield import BasicBitfield
 from generated.base_enum import BaseEnum
+import generated.formats.nif as NifFormat
+from generated.formats.nif.basic import Ref, Ptr
 # END_GLOBALS
 
 class NiObject:
@@ -57,14 +58,26 @@ class NiObject:
 
 
 	def get_links(self):
+		def field_has_links(attr_def):
+			if issubclass(attr_def[1], Array):
+				f_type = attr_def[2][3]
+			else:
+				f_type = attr_def[1]
+			return f_type._has_links
 		condition_function = lambda x: issubclass(x[1], (Ref, Ptr))
-		for val in NifFormat.get_condition_values_recursive(self, condition_function):
+		for val in NifFormat.get_condition_values_recursive(self, condition_function, enter_condition=field_has_links):
 			if val is not None:
 				yield val
 
 	def get_refs(self):
+		def field_has_refs(attr_def):
+			if issubclass(attr_def[1], Array):
+				f_type = attr_def[2][3]
+			else:
+				f_type = attr_def[1]
+			return f_type._has_refs
 		condition_function = lambda x: issubclass(x[1], Ref)
-		for val in NifFormat.get_condition_values_recursive(self, condition_function):
+		for val in NifFormat.get_condition_values_recursive(self, condition_function, enter_condition=field_has_refs):
 			if val is not None:
 				yield val
 

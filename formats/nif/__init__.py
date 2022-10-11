@@ -4,6 +4,7 @@ import logging
 import os
 import re
 
+from generated.array import Array
 from generated.formats.nif.basic import Uint, FileVersion, Ulittle32, LineString, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString, basic_map
 from generated.formats.nif.bsmain.structs.BSStreamHeader import BSStreamHeader
 from generated.formats.nif.enums.DataStreamUsage import DataStreamUsage
@@ -51,12 +52,12 @@ def get_conditioned_attributes(struct_type, struct_instance, condition_function,
 			yield attribute
 
 
-def get_condition_attributes_recursive(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
+def get_condition_attributes_recursive(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True, enter_condition=lambda x: True):
 	for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
 		field_name, field_type, field_arguments = attribute[0:3]
 		if condition_function(attribute):
 			yield struct_type, struct_instance, attribute
-		if callable(getattr(field_type, "_get_filtered_attribute_list", None)):
+		if callable(getattr(field_type, "_get_filtered_attribute_list", None)) and enter_condition(attribute):
 			yield from get_condition_attributes_recursive(field_type,
 											   struct_type.get_field(struct_instance, field_name),
 											   condition_function,
@@ -64,8 +65,8 @@ def get_condition_attributes_recursive(struct_type, struct_instance, condition_f
 											   include_abstract)
 
 
-def get_condition_values_recursive(instance, condition_function, arguments=(), include_abstract=True):
-	for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(instance), instance, condition_function, arguments, include_abstract):
+def get_condition_values_recursive(instance, condition_function, arguments=(), include_abstract=True, enter_condition=lambda x: True):
+	for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(instance), instance, condition_function, arguments, include_abstract, enter_condition):
 		val = s_type.get_field(s_inst, f_name)
 		yield val
 
@@ -82,6 +83,45 @@ def safe_decode(b: bytes, encodings=('ascii', 'utf8', 'latin1', 'shift-jis')) ->
 def encode(s: str, encoding='utf-8') -> bytes:
 	# since utf-8 contains all characters of the other encodings, encoding to it is a safe guess
 	return s.encode("utf-8", errors="surrogateescape")
+
+
+def class_post_processor(defined_class, processed_classes):
+	# create the _has_links, _has_refs and _has_strings class variables
+	# set all three to None just in case of infinite recursion
+	if defined_class in processed_classes:
+		return defined_class
+	defined_class._has_links = None
+	defined_class._has_refs = None
+	defined_class._has_strings = None
+	processed_classes.add(defined_class)
+	if getattr(defined_class, "_attribute_list", None) is not None:
+		fields_links = [None] * len(defined_class._attribute_list)
+		fields_refs = [None] * len(defined_class._attribute_list)
+		fields_strings = [None] * len(defined_class._attribute_list)
+		for i, (f_name, f_type, args, *_) in enumerate(defined_class._attribute_list):
+			if f_type is None:
+				# type is unknown, so you always have to check
+				fields_links[i] = True
+				fields_refs[i] = True
+				fields_strings[i] = True
+				continue
+			elif issubclass(f_type, Array):
+				f_type = args[3]
+			if not f_type in processed_classes:
+				class_post_processor(f_type, processed_classes)
+			fields_links[i] = f_type._has_links
+			fields_refs[i] = f_type._has_refs
+			fields_strings[i] = f_type._has_strings
+		defined_class._has_links = any(fields_links)
+		defined_class._has_refs = any(fields_refs)
+		defined_class._has_strings = any(fields_strings)
+	else:
+		# is a basic, enum, bitfield or basic-like, therefore has no reference
+		# technically bitfields could contain links, but no existing one does at the moment
+		defined_class._has_links = issubclass(defined_class, (Ptr, Ref))
+		defined_class._has_refs = issubclass(defined_class, Ref)
+		defined_class._has_links = issubclass(defined_class, (String, FilePath, NiFixedString))
+	return defined_class
 
 # filter for recognizing NIF files by extension
 # .kf are NIF files containing keyframes
@@ -100,6 +140,9 @@ EPSILON = 0.0001
 
 classes = create_niclasses_map()
 classes.update(basic_map)
+processed_classes = set()
+for defined_class in classes.values():
+	class_post_processor(defined_class, processed_classes)
 niobject_map = {niclass.__name__: niclass for niclass in classes.values() if issubclass(niclass, NiObject)}
 
 
