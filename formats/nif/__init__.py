@@ -512,7 +512,7 @@ class NifFile(Header):
 		super().write_fields(stream, instance)
 
 	def write(self, stream):
-		return type(self).to_stream(stream, self)
+		return type(self).to_stream(self, stream, self)
 
 	@classmethod
 	def from_stream(cls, stream, context=None, arg=0, template=None):
@@ -532,7 +532,7 @@ class NifFile(Header):
 		return instance
 
 	@classmethod
-	def to_stream(cls, stream, instance):
+	def to_stream(cls, instance, stream, context=None, argument=0, template=None):
 		logger = logging.getLogger("generated.formats.nif")
 		# the context (i.e. the file) is stored on the stream
 		stream.context = instance
@@ -583,29 +583,29 @@ class NifFile(Header):
 		for block in instance.blocks:
 			# signal top level object if block is a root object
 			if instance.version < 0x0303000D and block in instance.roots:
-				SizedString.to_stream(stream, "Top Level Object")
+				SizedString.to_stream("Top Level Object", stream, instance)
 			if instance.version >= 0x05000001:
 				if instance.version <= 0x0A01006A:
 					# write zero dummy separator
-					Uint.to_stream(stream, 0)
+					Uint.to_stream(0, stream, instance)
 			else:
 				# write block type string
 				assert(block_type_list[block_type_dct[block]] == type(block).__name__)
-				SizedString.to_stream(stream, type(block).__name__)
+				SizedString.to_stream(type(block).__name__, stream, instance)
 			# write block index
 			logger.debug(f"Writing {type(block).__name__} block")
 			if instance.version < 0x0303000D:
-				Uint.to_stream(stream, instance._block_index_dct[block]) # original pyffi code had Int
+				Uint.to_stream(instance._block_index_dct[block], stream, instance) # original pyffi code had Int
 			# write block
-			type(block).to_stream(stream, block)
+			type(block).to_stream(block, stream, instance)
 		if instance.version < 0x0303000D:
-			SizedString.to_stream(stream, "End Of File")
+			SizedString.to_stream("End Of File", stream, instance)
 
 		# write the Footer
 		ftr = Footer(instance)
 		ftr.num_roots = len(instance.roots)
 		ftr.roots[:] = instance.roots
-		Footer.to_stream(stream, ftr)
+		Footer.to_stream(ftr, stream, instance)
 		return instance
 
 	def validate(self):
@@ -622,7 +622,7 @@ class NifFile(Header):
 	@classmethod
 	def to_path(cls, filepath, instance):
 		with open(filepath, "wb") as stream:
-			cls.to_stream(stream, instance)
+			cls.to_stream(instance, stream, instance)
 
 __xml_version__ = "0.9.3.0"
 

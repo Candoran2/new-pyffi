@@ -20,11 +20,11 @@ class ExportString(BaseStruct):
 		return NifFormat.safe_decode(chars)
 
 	@staticmethod
-	def to_stream(stream, instance):
+	def to_stream(instance, stream, context, arg=0, template=None):
 		instance = instance + '\x00'
 		encoded_instance = NifFormat.encode(instance)
 		length = len(encoded_instance)
-		Byte.to_stream(stream, length)
+		Byte.to_stream(length, stream, context)
 		stream.write(encoded_instance)
 
 	@staticmethod

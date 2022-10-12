@@ -53,7 +53,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			return cls.unpack(stream.read(cls.size))[0]
 
 		@classmethod
-		def to_stream(cls, stream, instance):
+		def to_stream(cls, instance, stream, context=None, arg=0, template=None):
 			stream.write(cls.pack(instance))
 
 		@classmethod
@@ -74,7 +74,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			return array
 
 		@classmethod
-		def write_array(cls, stream, instance):
+		def write_array(cls, instance, stream):
 			# check that it is a numpy array
 			if not isinstance(instance, np.ndarray):
 				instance = np.array(instance, cls.np_dtype)
@@ -180,8 +180,8 @@ class Char:
 		return chr(Byte.from_stream(stream, context, arg, template))
 
 	@classmethod
-	def to_stream(cls, stream, instance):
-		Byte.to_stream(stream, ord(instance))
+	def to_stream(cls, instance, stream, context=None, arg=0, template=None):
+		Byte.to_stream(ord(instance), stream, context)
 
 	@staticmethod
 	def get_size(context, instance, arguments=()):
@@ -223,8 +223,8 @@ class Normbyte:
 		return (Byte.from_stream(stream, context, arg, template) / 127.5) - 1.0
 
 	@classmethod
-	def to_stream(cls, stream, instance):
-		Byte.to_stream(stream, int(round((instance + 1.0) * 127.5, 0)))
+	def to_stream(cls, instance, stream, context=None, arg=0, template=None):
+		Byte.to_stream(int(round((instance + 1.0) * 127.5, 0)), stream, context)
 
 	@staticmethod
 	def get_size(context, instance, arguments=()):
@@ -319,7 +319,7 @@ class LineString:
 		return NifFormat.safe_decode(val)
 
 	@staticmethod
-	def to_stream(stream, instance):
+	def to_stream(instance, stream, context=None, arg=0, template=None):
 		stream.write(NifFormat.encode(instance))
 		stream.write(b'\x0A')
 
@@ -380,10 +380,9 @@ class HeaderString(LineString):
 		return ver, modification
 
 	@classmethod
-	def to_stream(cls, stream, instance=None):
-		context = stream.context
+	def to_stream(cls, instance, stream, context, arg=0, template=None):
 		instance = cls.version_string(context.version, context.modification)
-		super().to_stream(stream, instance)
+		super().to_stream(instance, stream, context)
 	
 	@staticmethod
 	def version_string(version, modification=None):
@@ -442,12 +441,12 @@ class Ptr:
 		return Int.from_stream(stream, context, arg, template)
 
 	@classmethod
-	def to_stream(cls, stream, instance):
+	def to_stream(cls, instance, stream, context, arg=0, template=None):
 		if instance is None:
 			index = -1
 		else:
-			index = stream.context._block_index_dct[instance]
-		Int.to_stream(stream, index)
+			index = context._block_index_dct[instance]
+		Int.to_stream(index, stream, context)
 
 	@staticmethod
 	def fmt_member(member, indent=0):
@@ -473,12 +472,12 @@ class Ref:
 		return Int.from_stream(stream, context, arg, template)
 
 	@classmethod
-	def to_stream(cls, stream, instance):
+	def to_stream(cls, instance, stream, context, arg=0, template=None):
 		if instance is None:
 			index = -1
 		else:
-			index = stream.context._block_index_dct[instance]
-		Int.to_stream(stream, index)
+			index = context._block_index_dct[instance]
+		Int.to_stream(index, stream, context)
 
 	@staticmethod
 	def fmt_member(member, indent=0):
@@ -513,13 +512,13 @@ class NiFixedString:
 				raise ValueError(f'string index too large ({index})')
 
 	@staticmethod
-	def to_stream(stream, instance):
+	def to_stream(instance, stream, context, arg=0, template=None):
 		index = -1
-		for i, string in enumerate(stream.context.strings):
+		for i, string in enumerate(context.strings):
 			if instance == string:
 				index = i
 				break
-		Int.to_stream(stream, index)
+		Int.to_stream(index, stream, context)
 
 	@staticmethod
 	def get_size(context, instance, arguments=()):

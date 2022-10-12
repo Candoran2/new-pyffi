@@ -17,9 +17,9 @@ class SizedString:
 		return NifFormat.safe_decode(chars)
 
 	@staticmethod
-	def to_stream(stream, instance):
+	def to_stream(instance, stream, context, arg=0, template=None):
 		encoded_instance = NifFormat.encode(instance)
-		Uint.to_stream(stream, len(encoded_instance))
+		Uint.to_stream(len(encoded_instance), stream, context)
 		stream.write(encoded_instance)
 
 	@staticmethod

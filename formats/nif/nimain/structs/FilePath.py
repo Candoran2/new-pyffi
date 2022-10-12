@@ -16,11 +16,11 @@ class FilePath:
 			return NiFixedString.from_stream(stream, context, 0, None)
 
 	@staticmethod
-	def to_stream(stream, instance):
+	def to_stream(instance, stream, context, arg=0, template=None):
 		if stream.context.version <= 335544325:
-			SizedString.to_stream(stream, instance)
+			SizedString.to_stream(instance, stream, context)
 		if stream.context.version >= 335609859:
-			NiFixedString.to_stream(stream, instance)
+			NiFixedString.to_stream(instance, stream, context)
 
 	@staticmethod
 	def get_size(context, instance, arguments=()):

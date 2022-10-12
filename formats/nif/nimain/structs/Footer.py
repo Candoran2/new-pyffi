@@ -18,8 +18,8 @@ class Footer:
 		return instance
 
 	@classmethod
-	def to_stream(cls, stream, instance):
-		super().to_stream(stream, instance)
+	def to_stream(cls, instance, stream, context, arg=0, template=None):
+		super().to_stream(instance, stream, context, arg, template)
 		modification = getattr(instance.context, "modification", None)
 		if modification == "neosteam":
 			stream.write("\x00".encode("ascii"))
