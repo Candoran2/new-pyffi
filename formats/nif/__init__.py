@@ -385,9 +385,15 @@ class NifFile(Header):
 	def resolve_references(self):
 		# go through every NiObject and replace references and pointers with the
 		# actual object they're pointing to
+		def field_has_links(attr_def):
+			if issubclass(attr_def[1], Array):
+				f_type = attr_def[2][3]
+			else:
+				f_type = attr_def[1]
+			return f_type._has_links
 		is_ref = lambda attribute: issubclass(attribute[1], (Ref, Ptr))
 		for block in self.blocks:
-			for parent_type, parent_instance, attribute in self.get_condition_attributes_recursive(type(block), block, is_ref):
+			for parent_type, parent_instance, attribute in self.get_condition_attributes_recursive(type(block), block, is_ref, enter_condition=field_has_links):
 				block_index = parent_type.get_field(parent_instance, attribute[0])
 				if isinstance(block_index, int):
 					if block_index >= 0:
