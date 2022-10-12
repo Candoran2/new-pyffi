@@ -6,6 +6,8 @@ import generated.formats.nif as NifFormat
 from generated.formats.nif.basic import Ref, Ptr
 # END_GLOBALS
 
+from generated.base_struct import BaseStruct
+
 class NiObject:
 # START_CLASS
 	def find(self, block_name = None, block_type = None):
@@ -65,7 +67,7 @@ class NiObject:
 				f_type = attr_def[1]
 			return f_type._has_links
 		condition_function = lambda x: issubclass(x[1], (Ref, Ptr))
-		for val in NifFormat.get_condition_values_recursive(self, condition_function, enter_condition=field_has_links):
+		for val in BaseStruct.get_condition_values_recursive(self, condition_function, enter_condition=field_has_links):
 			if val is not None:
 				yield val
 
@@ -77,7 +79,7 @@ class NiObject:
 				f_type = attr_def[1]
 			return f_type._has_refs
 		condition_function = lambda x: issubclass(x[1], Ref)
-		for val in NifFormat.get_condition_values_recursive(self, condition_function, enter_condition=field_has_refs):
+		for val in BaseStruct.get_condition_values_recursive(self, condition_function, enter_condition=field_has_refs):
 			if val is not None:
 				yield val
 

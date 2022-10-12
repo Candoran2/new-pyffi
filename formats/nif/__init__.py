@@ -46,31 +46,6 @@ def create_niclasses_map():
 	return niclasses_map
 
 
-def get_conditioned_attributes(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True):
-	for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
-		if condition_function(attribute):
-			yield attribute
-
-
-def get_condition_attributes_recursive(struct_type, struct_instance, condition_function, arguments=(), include_abstract=True, enter_condition=lambda x: True):
-	for attribute in struct_type._get_filtered_attribute_list(struct_instance, *arguments[3:4], include_abstract):
-		field_name, field_type, field_arguments = attribute[0:3]
-		if condition_function(attribute):
-			yield struct_type, struct_instance, attribute
-		if callable(getattr(field_type, "_get_filtered_attribute_list", None)) and enter_condition(attribute):
-			yield from get_condition_attributes_recursive(field_type,
-											   struct_type.get_field(struct_instance, field_name),
-											   condition_function,
-											   field_arguments,
-											   include_abstract)
-
-
-def get_condition_values_recursive(instance, condition_function, arguments=(), include_abstract=True, enter_condition=lambda x: True):
-	for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(instance), instance, condition_function, arguments, include_abstract, enter_condition):
-		val = s_type.get_field(s_inst, f_name)
-		yield val
-
-
 def safe_decode(b: bytes, encodings=('ascii', 'utf8', 'latin1', 'shift-jis')) -> str:
 	for encoding in encodings:
 		try:
@@ -370,7 +345,7 @@ class NifFile(Header):
 			return f_type._has_strings
 
 		condition_function = lambda x: issubclass(x[1], str_classes)
-		for val in get_condition_values_recursive(instance, condition_function, enter_condition=field_has_strings):
+		for val in self.get_condition_values_recursive(instance, condition_function, enter_condition=field_has_strings):
 			if val:
 				yield val
 
@@ -394,7 +369,7 @@ class NifFile(Header):
 		parsed_blocks = set()
 
 		def _get_recursive_strings_block(block):
-			for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(block), block, condition_function, enter_condition=field_has_strings):
+			for s_type, s_inst, (f_name, f_type, arguments, _) in self.get_condition_attributes_recursive(type(block), block, condition_function, enter_condition=field_has_strings):
 				value = s_type.get_field(s_inst, f_name)
 				if issubclass(f_type, Ref):
 					if value is not None and value not in parsed_blocks:
@@ -412,7 +387,7 @@ class NifFile(Header):
 		# actual object they're pointing to
 		is_ref = lambda attribute: issubclass(attribute[1], (Ref, Ptr))
 		for block in self.blocks:
-			for parent_type, parent_instance, attribute in get_condition_attributes_recursive(type(block), block, is_ref):
+			for parent_type, parent_instance, attribute in self.get_condition_attributes_recursive(type(block), block, is_ref):
 				block_index = parent_type.get_field(parent_instance, attribute[0])
 				if isinstance(block_index, int):
 					if block_index >= 0:
