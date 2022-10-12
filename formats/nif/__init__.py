@@ -374,17 +374,28 @@ class NifFile(Header):
 		# FilePaths do not reference that. However, it is not possible with the currently know valid nif versions.
 		str_classes = self.get_string_classes(self.version)
 
+		def field_has_strings(attr_def):
+			if issubclass(attr_def[1], Array):
+				f_type = attr_def[2][3]
+			else:
+				f_type = attr_def[1]
+			return f_type._has_refs or f_type._has_strings
+
+		condition_function = lambda x: issubclass(x[1], (*str_classes, Ref))
+
+		parsed_blocks = set()
+
 		def _get_recursive_strings_block(block):
-			condition_function = lambda x: issubclass(x[1], (*str_classes, Ref))
-			for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(block), block, condition_function):
+			for s_type, s_inst, (f_name, f_type, arguments, _) in get_condition_attributes_recursive(type(block), block, condition_function, enter_condition=field_has_strings):
 				value = s_type.get_field(s_inst, f_name)
 				if issubclass(f_type, Ref):
-					if value is not None:
+					if value is not None and value not in parsed_blocks:
 						yield from _get_recursive_strings_block(value)
 				else:
 					# must be a string type
 					if value:
 						yield value
+			parsed_blocks.add(block)
 
 		yield from _get_recursive_strings_block(instance)
 
@@ -526,7 +537,8 @@ class NifFile(Header):
 		# create/update the block list before anything else
 		for root in instance.roots:
 			instance._makeBlockList(root, instance._block_index_dct, block_type_list, block_type_dct)
-			instance._string_list.extend(instance.get_recursive_strings(root))
+			if instance.version >= 0x14010001:
+				instance._string_list.extend(instance.get_recursive_strings(root))
 # 			recursive strings (at least for test maplestory 2 (30.2.0.3) nif) is more true to base game order
 # 			than get_strings per block
 # 			for block in cls.tree(root):
@@ -539,15 +551,17 @@ class NifFile(Header):
 		instance.block_types[:] = block_type_list
 		instance.reset_field("block_type_index")
 		instance.block_type_index[:] = [block_type_dct[block] for block in instance.blocks]
-		instance.num_strings = len(instance._string_list)
-		if instance._string_list:
-			instance.max_string_length = max([SizedString.get_size(instance, s) - 4 for s in instance._string_list])
-		else:
-			instance.max_string_length = 0
-		instance.reset_field("strings")
-		instance.strings[:] = instance._string_list
-		instance.reset_field("block_size")
-		instance.block_size[:] = [type(block).get_size(instance, block) for block in instance.blocks]
+		if instance.version >= 0x14010001:
+			instance.num_strings = len(instance._string_list)
+			if instance._string_list:
+				instance.max_string_length = max([SizedString.get_size(instance, s) - 4 for s in instance._string_list])
+			else:
+				instance.max_string_length = 0
+			instance.reset_field("strings")
+			instance.strings[:] = instance._string_list
+		if instance.version >= 0x14020005:
+			instance.reset_field("block_size")
+			instance.block_size[:] = [type(block).get_size(instance, block) for block in instance.blocks]
 
 		# update the basics before doing any writing
 		[basic.update_struct(instance) for basic in switchable_endianness]
