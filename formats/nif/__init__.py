@@ -120,7 +120,7 @@ def class_post_processor(defined_class, processed_classes):
 		# technically bitfields could contain links, but no existing one does at the moment
 		defined_class._has_links = issubclass(defined_class, (Ptr, Ref))
 		defined_class._has_refs = issubclass(defined_class, Ref)
-		defined_class._has_links = issubclass(defined_class, (String, FilePath, NiFixedString))
+		defined_class._has_strings = issubclass(defined_class, (String, FilePath, NiFixedString))
 	return defined_class
 
 # filter for recognizing NIF files by extension
@@ -361,8 +361,16 @@ class NifFile(Header):
 	def get_strings(self, instance):
 		"""Get all strings in the structure."""
 		str_classes = self.get_string_classes(self.version)
+
+		def field_has_strings(attr_def):
+			if issubclass(attr_def[1], Array):
+				f_type = attr_def[2][3]
+			else:
+				f_type = attr_def[1]
+			return f_type._has_strings
+
 		condition_function = lambda x: issubclass(x[1], str_classes)
-		for val in get_condition_values_recursive(instance, condition_function):
+		for val in get_condition_values_recursive(instance, condition_function, enter_condition=field_has_strings):
 			if val:
 				yield val
 

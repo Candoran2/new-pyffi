@@ -81,7 +81,7 @@ class NiObject:
 			if val is not None:
 				yield val
 
-	def tree(self, block_type = None, follow_all = True, unique = False):
+	def tree(self, block_type=None, follow_all=True, unique=False):
 		"""A generator for parsing all blocks in the tree (starting from and
 		including C{self}).
 
@@ -108,8 +108,7 @@ class NiObject:
 
 		# yield tree attached to each child
 		for child in type(self).get_refs(self):
-			for block in child.tree(block_type = block_type, follow_all = follow_all):
-				yield block
+			yield from child.tree(block_type=block_type, follow_all=follow_all)
 
 	def get_hash(self):
         # conversion of the original pyffi get_hash function which was a method on every class
