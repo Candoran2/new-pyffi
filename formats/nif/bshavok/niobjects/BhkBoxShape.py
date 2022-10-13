@@ -12,7 +12,7 @@ class BhkBoxShape:
 		self.dimensions.x *= scale
 		self.dimensions.y *= scale
 		self.dimensions.z *= scale
-		self.minimum_size  *= scale
+		self.unused_float  *= scale
 
 	def get_mass_center_inertia(self, density = 1, solid = True):
 		"""Return mass, center, and inertia tensor."""
