@@ -1,6 +1,7 @@
 # START_GLOBALS
 from itertools import repeat, chain
 
+from generated.array import Array
 import generated.formats.nif as NifFormat
 from generated.utils.inertia import get_mass_center_inertia_polyhedron
 from generated.utils.mathutils import float_to_int
@@ -35,9 +36,9 @@ class BhkPackedNiTriStripsShape:
 		# increase number of shapes
 		num_shapes = self.num_sub_shapes
 		self.num_sub_shapes = num_shapes + 1
-		self.sub_shapes.update_size()
+		self.sub_shapes.append(HkSubPartData(self.context))
 		data.num_sub_shapes = num_shapes + 1
-		data.sub_shapes.update_size()
+		data.sub_shapes.append(HkSubPartData(self.context))
 		# add the shape
 		self.sub_shapes[num_shapes].layer = layer
 		self.sub_shapes[num_shapes].num_vertices = len(vertices)
@@ -48,7 +49,7 @@ class BhkPackedNiTriStripsShape:
 		firsttriangle = data.num_triangles
 		firstvertex = data.num_vertices
 		data.num_triangles += len(triangles)
-		data.triangles.update_size()
+		data.triangles.extend(Array(data.triangles.context, data.triangles.arg, data.triangles.template, len(triangles), data.triangles.dtype))
 		for tdata, t, n in zip(data.triangles[firsttriangle:], triangles, normals):
 			tdata.triangle.v_1 = t[0] + firstvertex
 			tdata.triangle.v_2 = t[1] + firstvertex
@@ -57,7 +58,7 @@ class BhkPackedNiTriStripsShape:
 			tdata.normal.y = n[1]
 			tdata.normal.z = n[2]
 		data.num_vertices += len(vertices)
-		data.vertices.update_size()
+		data.vertices.extend(Array(data.vertices.context, shape=len(vertices), dtype=data.vertices.dtype))
 		for vdata, v in zip(data.vertices[firstvertex:], vertices):
 			vdata.x = v[0] / 7.0
 			vdata.y = v[1] / 7.0
