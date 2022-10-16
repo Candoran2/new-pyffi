@@ -543,14 +543,14 @@ class NifFile(Header):
 		if instance.version >= 0x14010001:
 			instance.num_strings = len(instance._string_list)
 			if instance._string_list:
-				instance.max_string_length = max([SizedString.get_size(instance, s) - 4 for s in instance._string_list])
+				instance.max_string_length = max([SizedString.get_size(s, instance) - 4 for s in instance._string_list])
 			else:
 				instance.max_string_length = 0
 			instance.reset_field("strings")
 			instance.strings[:] = instance._string_list
 		if instance.version >= 0x14020005:
 			instance.reset_field("block_size")
-			instance.block_size[:] = [type(block).get_size(instance, block) for block in instance.blocks]
+			instance.block_size[:] = [type(block).get_size(block, instance, 0, None) for block in instance.blocks]
 
 		# update the basics before doing any writing
 		[basic.update_struct(instance) for basic in switchable_endianness]
@@ -590,10 +590,10 @@ class NifFile(Header):
 		return instance
 
 	def validate(self):
-		type(self).validate_instance(self, self, (0, None))
+		type(self).validate_instance(self, self, 0, None)
 		for root in self.roots:
-			for block in root.tree():
-				type(block).validate_instance(block, self, arguments=(0, None))
+			for block in root.tree(unique=True):
+				type(block).validate_instance(block, self, arg=0, template=None)
 
 	@classmethod
 	def from_path(cls, filepath):

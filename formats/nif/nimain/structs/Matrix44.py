@@ -453,7 +453,7 @@ class Matrix44:
 				   for row in self.as_list())
 
 	@staticmethod
-	def validate_instance(instance, context=None, arguments=()):
+	def validate_instance(instance, context=None, arg=0, template=None):
 		Float.validate_instance(instance.m_11)
 		Float.validate_instance(instance.m_12)
 		Float.validate_instance(instance.m_13)

@@ -57,7 +57,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			stream.write(cls.pack(instance))
 
 		@classmethod
-		def get_size(cls, context, instance, arguments=()):
+		def get_size(cls, instance, context, arg=0, template=None):
 			return cls.size
 
 		@classmethod
@@ -118,7 +118,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			return read_value, write_value, read_values, write_values
 
 		@staticmethod
-		def from_xml(target, elem, prop, arguments=None):
+		def from_xml(target, elem, prop, arg=0, template=None):
 			return literal_eval(elem.attrib[prop])
 
 		@classmethod
@@ -126,7 +126,7 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			return np.fromstring(elem.text, dtype=cls.np_dtype, sep=" ")
 
 		@staticmethod
-		def to_xml(elem, prop, instance, arguments, debug):
+		def to_xml(elem, prop, instance, arg, template, debug):
 			elem.attrib[prop] = str(instance)
 
 		@staticmethod
@@ -140,12 +140,12 @@ def ve_class_from_struct(le_struct, from_value_func, name=''):
 			return "\n".join(lines_new)
 
 		@classmethod
-		def validate_instance(cls, instance, context=None, arguments=()):
+		def validate_instance(cls, instance, context=None, arg=0, template=None):
 			assert(instance == cls.from_value(instance))
 
 		@classmethod
-		def validate_array(cls, instance, context=None, arguments=()):
-			assert instance.shape == arguments[2]
+		def validate_array(cls, instance, context=None, arg=0, template=None, shape=()):
+			assert instance.shape == shape
 			assert instance.dtype.char == cls.np_dtype.char
 
 
@@ -184,7 +184,7 @@ class Char:
 		Byte.to_stream(ord(instance), stream, context)
 
 	@staticmethod
-	def get_size(context, instance, arguments=()):
+	def get_size(instance, context, arg=0, template=None):
 		return 1
 
 	@classmethod
@@ -198,7 +198,7 @@ class Char:
 				yield (i, Array, (0, None, instance.shape[1:], cls), (False, None))
 
 	@classmethod
-	def validate_instance(cls, instance, context=None, arguments=()):
+	def validate_instance(cls, instance, context=None, arg=0, template=None):
 		assert(isinstance(instance, str))
 		assert(len(instance) == 1)
 
@@ -227,11 +227,11 @@ class Normbyte:
 		Byte.to_stream(int(round((instance + 1.0) * 127.5, 0)), stream, context)
 
 	@staticmethod
-	def get_size(context, instance, arguments=()):
+	def get_size(instance, context, arg=0, template=None):
 		return 1
 
 	@classmethod
-	def validate_instance(cls, instance, context=None, arguments=()):
+	def validate_instance(cls, instance, context=None, arg=0, template=None):
 		assert instance >= -1.0
 		assert instance <= 1.0
 
@@ -292,8 +292,8 @@ class Bool(ve_class_from_struct(Struct('<q'), lambda value: (int(value) + 214748
 				cls.set_struct(cls._be_byte_struct)
 
 		@classmethod
-		def validate_array(cls, instance, context=None, arguments=()):
-			assert instance.shape == arguments[2]
+		def validate_array(cls, instance, context=None, arg=0, template=None, shape=()):
+			assert instance.shape == shape
 			assert instance.dtype.char in ("b", "i")
 
 
@@ -324,7 +324,7 @@ class LineString:
 		stream.write(b'\x0A')
 
 	@staticmethod
-	def get_size(context, instance, arguments=()):
+	def get_size(instance, context, arg=0, template=None):
 		return len(NifFormat.encode(instance)) + 1
 
 	@staticmethod
@@ -338,7 +338,7 @@ class LineString:
 		return "\n".join(lines_new)
 
 	@classmethod
-	def validate_instance(cls, instance, context=None, arguments=()):
+	def validate_instance(cls, instance, context=None, arg=0, template=None):
 		assert(isinstance(instance, str))
 		assert(len(NifFormat.encode(instance)) <= cls.MAX_LEN)
 
@@ -433,6 +433,8 @@ class HeaderString(LineString):
 class Ptr:
 	# remove the array writing functions, because otherwise you can't assign the resolved blocks
 	def __new__(cls, context=None, arg=0, template=None):
+		if template is None:
+			raise TypeError(f'{type(cls).__name__} requires template is not None')
 		return None
 
 	@classmethod
@@ -453,17 +455,19 @@ class Ptr:
 		return f'{type(member).__name__} id: {id(member)}'
 
 	@staticmethod
-	def validate_instance(instance, context=None, arguments=()):
-		assert ((instance is None) or isinstance(instance, arguments[1]))
+	def validate_instance(instance, context=None, arg=0, template=None):
+		assert ((instance is None) or isinstance(instance, template))
 
 	@classmethod
-	def get_size(cls, context, instance, arguments=()):
-		return Int.get_size(context, 0, arguments=())
+	def get_size(cls, instance, context, arg=0, template=None):
+		return Int.get_size(0, context, 0, None)
 
 
 class Ref:
 
 	def __new__(cls, context=None, arg=0, template=None):
+		if template is None:
+			raise TypeError(f'{type(cls).__name__} requires template is not None')
 		return None
 
 	@classmethod
@@ -484,12 +488,12 @@ class Ref:
 		return f'{type(member).__name__} id: {id(member)}'
 
 	@staticmethod
-	def validate_instance(instance, context=None, arguments=()):
-		assert ((instance is None) or isinstance(instance, arguments[1]))
+	def validate_instance(instance, context=None, arg=0, template=None):
+		assert ((instance is None) or isinstance(instance, template))
 
 	@classmethod
-	def get_size(cls, context, instance, arguments=()):
-		return Int.get_size(context, 0, arguments=())
+	def get_size(cls, instance, context, arg=0, template=None):
+		return Int.get_size(0, context, 0, None)
 
 
 class StringOffset(Uint): pass #although a different class, no different (except not countable)
@@ -521,7 +525,7 @@ class NiFixedString:
 		Int.to_stream(index, stream, context)
 
 	@staticmethod
-	def get_size(context, instance, arguments=()):
+	def get_size(instance, context, arg=0, template=None):
 		return 4
 
 	@staticmethod
@@ -529,7 +533,7 @@ class NiFixedString:
 		return repr(instance)
 
 	@staticmethod
-	def validate_instance(instance, context=None, arguments=()):
+	def validate_instance(instance, context=None, arg=0, template=None):
 		assert isinstance(instance, str)
 
 

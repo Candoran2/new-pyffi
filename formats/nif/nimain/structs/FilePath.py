@@ -23,11 +23,11 @@ class FilePath:
 			NiFixedString.to_stream(instance, stream, context)
 
 	@staticmethod
-	def get_size(context, instance, arguments=()):
+	def get_size(instance, context, arg=0, template=None):
 		if context.version <= 335544325:
-			return SizedString.get_size(context, instance)
+			return SizedString.get_size(instance, context)
 		if context.version >= 335609859:
-			return NiFixedString.get_size(context, instance)
+			return NiFixedString.get_size(instance, context)
 
 	get_field = None
 	_get_filtered_attribute_list = None
@@ -37,6 +37,6 @@ class FilePath:
 		return repr(instance)
 
 	@classmethod
-	def validate_instance(cls, instance, context=None, arguments=()):
+	def validate_instance(cls, instance, context=None, arg=0, template=None):
 		# either it contained a sizedstring or it referred to one in the header
-		return SizedString.validate_instance(instance, context, (0, None))
+		return SizedString.validate_instance(instance, context, 0, None)

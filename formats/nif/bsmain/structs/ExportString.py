@@ -28,12 +28,12 @@ class ExportString(BaseStruct):
 		stream.write(encoded_instance)
 
 	@staticmethod
-	def get_size(context, instance, arguments=()):
+	def get_size(instance, context, arg=0, template=None):
 		string_len = len(NifFormat.encode(instance)) + 1
-		return Byte.get_size(context, string_len) + string_len
+		return Byte.get_size(string_len, context) + string_len
 
 	@classmethod
-	def validate_instance(cls, instance, context=None, arguments=()):
+	def validate_instance(cls, instance, context=None, arg=0, template=None):
 		assert isinstance(instance, str)
 		assert len(NifFormat.encode(instance + '\x00')) <= 255
 

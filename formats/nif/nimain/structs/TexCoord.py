@@ -103,6 +103,6 @@ class TexCoord:
 		return v
 
 	@staticmethod
-	def validate_instance(instance, context=None, arguments=()):
+	def validate_instance(instance, context=None, arg=0, template=None):
 		Float.validate_instance(instance.u)
 		Float.validate_instance(instance.v)

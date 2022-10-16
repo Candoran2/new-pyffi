@@ -18,7 +18,7 @@ class Color4:
 		return instance
 
 	@staticmethod
-	def validate_instance(instance, context=None, arguments=()):
+	def validate_instance(instance, context=None, arg=0, template=None):
 		Float.validate_instance(instance.r)
 		Float.validate_instance(instance.g)
 		Float.validate_instance(instance.b)

@@ -17,7 +17,7 @@ class ByteVector3(Vector3, metaclass=StructMetaClass):
 		yield 'z', Normbyte, (0, None), (False, None)
 
 	@staticmethod
-	def validate_instance(instance, context=None, arguments=()):
+	def validate_instance(instance, context=None, arg=0, template=None):
 		Normbyte.validate_instance(instance.x)
 		Normbyte.validate_instance(instance.y)
 		Normbyte.validate_instance(instance.z)

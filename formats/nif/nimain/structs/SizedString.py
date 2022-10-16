@@ -23,9 +23,9 @@ class SizedString:
 		stream.write(encoded_instance)
 
 	@staticmethod
-	def get_size(context, instance, arguments=()):
+	def get_size(instance, context, arg=0, template=None):
 		string_len = len(NifFormat.encode(instance))
-		return Uint.get_size(context, string_len) + string_len
+		return Uint.get_size(string_len, context) + string_len
 
 	get_field = None
 	_get_filtered_attribute_list = None
@@ -35,7 +35,7 @@ class SizedString:
 		return repr(instance)
 
 	@classmethod
-	def validate_instance(cls, instance, context=None, arguments=()):
+	def validate_instance(cls, instance, context=None, arg=0, template=None):
 		assert isinstance(instance, str)
 		assert len(NifFormat.encode(instance)) <= 4294967295
 

@@ -102,7 +102,7 @@ class Matrix34:
 		return not self.__eq__(mat)
 
 	@staticmethod
-	def validate_instance(instance, context=None, arguments=()):
+	def validate_instance(instance, context=None, arg=0, template=None):
 		Float.validate_instance(instance.m_11)
 		Float.validate_instance(instance.m_12)
 		Float.validate_instance(instance.m_13)
