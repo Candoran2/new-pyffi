@@ -58,7 +58,7 @@ class NiTriBasedGeom:
 
 		return zip(self.data.normals, tangents, bitangents)
 
-	def update_tangent_space(self, as_extra=None, vertexprecision=3, normalprecision=3):
+	def update_tangent_space(self, as_extra=None, vertexprecision=3, normalprecision=3, uvprecision=3):
 		"""Recalculate tangent space data.
 
 		:param as_extra: Whether to store the tangent space data as extra data
@@ -95,7 +95,7 @@ class NiTriBasedGeom:
 			self.data.get_vertex_hash_generator(
 				vertexprecision=vertexprecision,
 				normalprecision=normalprecision,
-				uvprecision=-2,
+				uvprecision=uvprecision,
 				vcolprecision=-2))
 
 		# tangent and binormal dictionaries by vertex hash
