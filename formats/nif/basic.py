@@ -209,31 +209,49 @@ class Char:
 		return "\n".join(lines_new)
 
 
-class Normbyte:
+class UNormClass:
+
+	"""Class for floats between 0.0 and 1.0 stored linearly
+	This class cannot be used on its own and must be subclassed, with the following class functions/variables defined:
+		- storage: the class used for reading/writing
+		- from_function: converts the int to the corresponding float
+		- to_function: converts the float to the rounded float value
+		Both from_function and to_function must work for single values as well as numpy arrays
+	Assumptions:
+		- storage class has np_type class variable for associated numpy dtype
+		- storage class returns np.ndarray for array reading/writing
+	"""
 
 	def __new__(cls, context=None, arg=0, template=None):
 		return 0.0
 
+	@classmethod
+	def from_stream(cls, stream, context, arg, template):
+		return cls.from_function(cls.storage.from_stream(stream, context, arg, template))
+
+	@classmethod
+	def to_stream(cls, instance, stream, context, arg, template):
+		cls.storage.to_stream(int(cls.to_function(instance)), stream, context, arg, template)
+
+	@classmethod
+	def get_size(cls, instance, context, arg=0, template=None):
+		return cls.storage.get_size(cls.to_function(instance))
+
 	@staticmethod
 	def from_value(value):
-		return (float(value) + 1) % 2 - 1
-
-	@classmethod
-	def from_stream(cls, stream, context=None, arg=0, template=None):
-		return (Byte.from_stream(stream, context, arg, template) / 127.5) - 1.0
-
-	@classmethod
-	def to_stream(cls, instance, stream, context=None, arg=0, template=None):
-		Byte.to_stream(int(round((instance + 1.0) * 127.5, 0)), stream, context)
-
-	@staticmethod
-	def get_size(instance, context, arg=0, template=None):
-		return 1
+		# normalized value can range from 0.0 to 1.0
+		return min(max(0.0, value), 1.0)
 
 	@classmethod
 	def validate_instance(cls, instance, context=None, arg=0, template=None):
-		assert instance >= -1.0
+		assert instance >= 0.0
 		assert instance <= 1.0
+
+	@staticmethod
+	def fmt_member(member, indent=0):
+		lines = str(member).split("\n")
+		lines_new = [lines[0], ] + ["\t" * indent + line for line in lines[1:]]
+		return "\n".join(lines_new)
 
 	@classmethod
 	def create_array(cls, shape, default=None, context=None, arg=0, template=None):
@@ -244,9 +262,7 @@ class Normbyte:
 
 	@classmethod
 	def read_array(cls, stream, shape, context=None, arg=0, template=None):
-		array = np.empty(shape, Byte.np_dtype)
-		stream.readinto(array)
-		return (array.astype(float) / 127.0) - 1.0
+		return cls.from_function(cls.storage.read_array(stream, shape, context, arg, template).astype(float))
 
 	@classmethod
 	def write_array(cls, stream, instance):
@@ -254,8 +270,33 @@ class Normbyte:
 		if not isinstance(instance, np.ndarray):
 			instance = np.array(instance, float)
 		# don't need to cast specifically to float, but do need to convert to byte for writing
-		instance = np.round((instance + 1.0) * 127.5).astype(Byte.np_type)
-		stream.write(instance.tobytes())
+		instance = cls.to_function(instance).astype(cls.storage.np_type)
+		cls.storage.write_array(stream, instance)
+
+class NormClass(UNormClass):
+
+	@staticmethod
+	def from_value(value):
+		# signed normalized values can range from -1.0 to 1.0
+		return min(max(-1.0, value), 1.0)
+
+	@classmethod
+	def validate_instance(cls, instance, context=None, arg=0, template=None):
+		assert instance >= -1.0
+		assert instance <= 1.0
+
+class Normbyte(NormClass):
+
+	storage = Byte
+
+	@staticmethod
+	def from_function(instance):
+		return instance / 127.5 - 1.0
+
+	@staticmethod
+	def to_function(instance):
+		return np.round((instance + 1) * 127.5)
+
 
 class BlockTypeIndex(Short): pass
 

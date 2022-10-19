@@ -300,7 +300,7 @@ class NifFile(Header):
 				if calculated_size != self.block_size[block_num]:
 					extra_size = self.block_size[block_num] - calculated_size
 					logger.error("Block size check failed: corrupt NIF file or bad nif.xml?")
-					logger.error("Skipping {extra_size} bytes in {block_type}")
+					logger.error(f"Skipping {extra_size} bytes in block [{block_index}]{block_type}")
 					# skip bytes that were missed
 					stream.seek(extra_size, 1)
 			# add block to roots if flagged as such
