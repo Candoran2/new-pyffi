@@ -35,7 +35,7 @@ class ExportString(BaseStruct):
 	@classmethod
 	def validate_instance(cls, instance, context=None, arg=0, template=None):
 		assert isinstance(instance, str)
-		assert len(NifFormat.encode(instance + '\x00')) <= 255
+		Byte.validate_instance(len(NifFormat.encode(instance + '\x00')), context)
 
 	get_field = None
 	_get_filtered_attribute_list = None

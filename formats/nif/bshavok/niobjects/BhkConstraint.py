@@ -30,3 +30,12 @@ class BhkConstraint:
 		# return the relative transform
 		return (chainA[-3].get_transform(relative_to = parent)
 				* chainB[-3].get_transform(relative_to = parent).get_inverse())
+
+	def update_a_b(self, parent):
+		"""Update the B data from the A data. The parent argument is simply a
+		common parent to the entities."""
+		self.constraint.update_a_b(self.get_transform_a_b(parent))
+
+	def apply_scale(self, scale):
+		"""Scale data."""
+		self.constraint.apply_scale(scale)
