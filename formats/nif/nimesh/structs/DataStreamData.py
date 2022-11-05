@@ -3,7 +3,7 @@ from math import prod
 
 from generated.array import Array
 from generated.base_struct import BaseStruct
-from generated.formats.nif.bitfields.ComponentFormat import ComponentFormat
+from generated.formats.nif.enums.ComponentFormat import ComponentFormat
 # END_GLOBALS
 
 
@@ -41,14 +41,11 @@ class DataStreamData:
 
 	@staticmethod
 	def size_from_components(components):
-		if len(components) > 0:
-			return sum([ComponentFormat.get_component_size(component) for component in components])
-		else:
-			return 0
+		return sum([ComponentFormat.get_component_size(component) for component in components])
 
 	@classmethod
 	def struct_from_components(cls, components):
-		component_structs = [ComponentFormat.struct_from_format(component) for component in components]
+		component_structs = [ComponentFormat.struct_for_format(component) for component in components]
 		if len(component_structs) == 1:
 			return component_structs[0]
 		else:
