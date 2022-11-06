@@ -245,7 +245,7 @@ class Matrix44:
 			m = self.as_list()
 			nn = [[0.0 for i in range(4)] for j in range(4)]
 			det = determinant(m)
-			if abs(det) < NifFormat.EPSILON:
+			if abs(det) <= (NifFormat.EPSILON):
 				raise ZeroDivisionError('cannot invert matrix:\n%s'%self)
 			for i in range(4):
 				for j in range(4):

@@ -147,7 +147,7 @@ class Matrix33:
 		and rotation is a C{Matrix33}. Returns a pair (scale, rotation)."""
 		rot = self.get_copy()
 		scale = self.get_scale()
-		if abs(scale) < NifFormat.EPSILON:
+		if abs(scale) <= NifFormat.EPSILON:
 			raise ZeroDivisionError('scale is zero, unable to obtain rotation')
 		rot /= scale
 		return (scale, rot)

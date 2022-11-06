@@ -22,7 +22,7 @@ class TexCoord:
 
 	def normalize(self):
 		r = (self.u*self.u + self.v*self.v) ** 0.5
-		if r < NifFormat.EPSILON:
+		if r <= NifFormat.EPSILON:
 			raise ZeroDivisionError('cannot normalize vector %s'%self)
 		self.u /= r
 		self.v /= r
