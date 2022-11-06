@@ -1,5 +1,6 @@
 from importlib import import_module
 from io import BytesIO
+from itertools import chain
 import logging
 import os
 import re
@@ -16,7 +17,7 @@ from generated.formats.nif.nimain.structs.Footer import Footer
 from generated.formats.nif.nimain.structs.SizedString import SizedString
 from generated.formats.nif.nimain.structs.FilePath import FilePath
 from generated.formats.nif.nimain.structs.String import String
-from generated.formats.nif.versions import has_bs_ver
+from generated.formats.nif.versions import has_bs_ver, available_versions
 
 
 class _attr_dict(dict):
@@ -107,7 +108,9 @@ def class_post_processor(defined_class, processed_classes):
 # .item are Divinity 2 NIF files
 # .nft are Bully SE NIF files (containing textures)
 # .nif_wii are Epic Mickey NIF files
-RE_FILENAME = re.compile(r'^.*\.(nif|kf|kfa|nifcache|jmi|texcache|pcpatch|nft|item|nif_wii)$', re.IGNORECASE)
+file_extensions = ["nif", "kf", "kfa", "jmi", "texcache", "pcpatch", "nif_wii"]
+file_extensions += list(set(chain.from_iterable([version.ext for version in available_versions])))
+RE_FILENAME = re.compile(fr"^.*\.({'|'.join(file_extensions)})$", re.IGNORECASE)
 # archives
 ARCHIVE_CLASSES = [] # link to the actual bsa format once done
 # used for comparing floats
