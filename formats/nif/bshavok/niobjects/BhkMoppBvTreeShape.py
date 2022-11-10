@@ -21,10 +21,12 @@ class BhkMoppBvTreeShape:
 		maxx = max(v.x for v in self.shape.data.vertices)
 		maxy = max(v.y for v in self.shape.data.vertices)
 		maxz = max(v.z for v in self.shape.data.vertices)
-		self.origin.x = minx - 0.1
-		self.origin.y = miny - 0.1
-		self.origin.z = minz - 0.1
-		self.scale = (256*256*254) / (0.2+max([maxx-minx,maxy-miny,maxz-minz]))
+		radius = self.shape.radius
+		origin_scale = self.mopp_code.offset
+		origin_scale.x = minx - radius
+		origin_scale.y = miny - radius
+		origin_scale.z = minz - radius
+		origin_scale.w = (256*256*254) / ((2 * radius) + max([maxx - minx, maxy - miny, maxz - minz]))
 
 	def update_mopp(self):
 		"""Update the MOPP data, scale, and origin, and welding info.
@@ -70,10 +72,11 @@ class BhkMoppBvTreeShape:
 				failed = True
 			else:
 				# must use calculated scale and origin
-				self.scale = scale
-				self.origin.x = origin[0]
-				self.origin.y = origin[1]
-				self.origin.z = origin[2]
+				origin_scale = self.mopp_code.offset
+				origin_scale.w = scale
+				origin_scale.x = origin[0]
+				origin_scale.y = origin[1]
+				origin_scale.z = origin[2]
 		# if havok's mopper failed, do a simple mopp
 		if failed:
 			logger.exception(
@@ -91,10 +94,11 @@ class BhkMoppBvTreeShape:
 			welding_infos = []
 
 		# delete mopp and replace with new data
-		self.mopp_data_size = len(mopp)
-		self.reset_field("mopp_data")
+		self.mopp_code.data_size = len(mopp)
+		self.mopp_code.reset_field("data")
+		data = self.mopp_code.data
 		for i, b in enumerate(mopp):
-			self.mopp_data[i] = b
+			data[i] = b
 
 		# update welding information
 		for hktri, welding_info in zip(self.shape.data.triangles, welding_infos):
@@ -150,15 +154,19 @@ class BhkMoppBvTreeShape:
 		return mopp
 
 	def _moppCeil(self, v):
-		moppx = int((v.x + 0.1 - self.origin.x) / self._q + 0.99999999)
-		moppy = int((v.y + 0.1 - self.origin.y) / self._q + 0.99999999)
-		moppz = int((v.z + 0.1 - self.origin.z) / self._q + 0.99999999)
+		origin_scale = self.mopp_code.offset
+		radius = self.shape.radius
+		moppx = int((v.x + radius - origin_scale.x) / self._q + 0.99999999)
+		moppy = int((v.y + radius - origin_scale.y) / self._q + 0.99999999)
+		moppz = int((v.z + radius - origin_scale.z) / self._q + 0.99999999)
 		return [moppx, moppy, moppz]
 
 	def _moppFloor(self, v):
-		moppx = int((v.x - 0.1 - self.origin.x) / self._q)
-		moppy = int((v.y - 0.1 - self.origin.y) / self._q)
-		moppz = int((v.z - 0.1 - self.origin.z) / self._q)
+		origin_scale = self.mopp_code.offset
+		radius = self.shape.radius
+		moppx = int((v.x - radius - origin_scale.x) / self._q)
+		moppy = int((v.y - radius - origin_scale.y) / self._q)
+		moppz = int((v.z - radius - origin_scale.z) / self._q)
 		return [moppx, moppy, moppz]
 
 	def split_triangles(self, ts, bbox, dir=0):
@@ -266,12 +274,12 @@ class BhkMoppBvTreeShape:
 				self.logger.error(self.msg)
 				self.msg = ""
 
-		mopp = self.mopp_data # shortcut notation
+		mopp = self.mopp_code.data # shortcut notation
 		ids = [] # indices of bytes processed
 		tris = [] # triangle indices
 		i = start # current index
 		ret = False # set to True if an opcode signals a triangle index
-		while i < self.mopp_data_size and not ret:
+		while i < self.mopp_code.data_size and not ret:
 			# get opcode and print it
 			code = mopp[i]
 			msg = Message()
@@ -424,8 +432,8 @@ class BhkMoppBvTreeShape:
 			else:
 				msg.append("unknown mopp code 0x%02X"%code).error()
 				msg.append("following bytes are").debug()
-				extrabytes = [mopp[j] for j in range(i+1,min(self.mopp_data_size,i+10))]
-				extraindex = [j	   for j in range(i+1,min(self.mopp_data_size,i+10))]
+				extrabytes = [mopp[j] for j in range(i+1,min(self.mopp_code.data_size,i+10))]
+				extraindex = [j	for j in range(i+1,min(self.mopp_code.data_size,i+10))]
 				msg.append(extrabytes).debug()
 				for b, j in zip(extrabytes, extraindex):
 					if j+b+1 < self.mopp_data_size:
