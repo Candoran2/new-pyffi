@@ -7,6 +7,13 @@ from generated.formats.nif.enums.MeshPrimitiveType import MeshPrimitiveType
 class NiMesh:
 # START_CLASS
 
+	def is_skin(self):
+		if self.has_extra_em_data:
+			return self.extra_em_data.num_weights > 0
+		else:
+			# not sure this is the right type of semanticdata, but use for now
+			return len(self.geomdata_by_name("BONE_PALETTE")) > 0
+
 	def geomdata_by_name(self, name):
 		"""Returns a list of all matching info from the nimesh datastreams. If multiple match, then they are sorted by 
 		the index"""
