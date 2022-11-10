@@ -34,7 +34,7 @@ class ExportString(BaseStruct):
 
 	@classmethod
 	def validate_instance(cls, instance, context=None, arg=0, template=None):
-		assert isinstance(instance, str)
+		assert isinstance(instance, str), f'{instance} is not a string'
 		Byte.validate_instance(len(NifFormat.encode(instance + '\x00')), context)
 
 	get_field = None

@@ -36,7 +36,7 @@ class SizedString16:
 
 	@classmethod
 	def validate_instance(cls, instance, context=None, arg=0, template=None):
-		assert isinstance(instance, str)
+		assert isinstance(instance, str), f'{instance} is not a string'
 		assert len(NifFormat.encode(instance)) <= 65535
 
 	@staticmethod
