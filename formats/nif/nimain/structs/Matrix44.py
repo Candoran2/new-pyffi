@@ -110,6 +110,27 @@ class Matrix44:
 		mat.m_44 = self.m_44
 		return mat
 
+	def get_transpose(self):
+		"""Get transposed of the matrix."""
+		mat = Matrix44()
+		mat.m_11 = self.m_11
+		mat.m_12 = self.m_21
+		mat.m_13 = self.m_31
+		mat.m_14 = self.m_41
+		mat.m_21 = self.m_12
+		mat.m_22 = self.m_22
+		mat.m_23 = self.m_32
+		mat.m_24 = self.m_42
+		mat.m_31 = self.m_13
+		mat.m_32 = self.m_23
+		mat.m_33 = self.m_33
+		mat.m_34 = self.m_43
+		mat.m_41 = self.m_14
+		mat.m_42 = self.m_24
+		mat.m_43 = self.m_34
+		mat.m_44 = self.m_44
+		return mat
+
 	def get_matrix_33(self):
 		"""Returns upper left 3x3 part."""
 		m = NifFormat.classes.Matrix33()
@@ -245,7 +266,7 @@ class Matrix44:
 			m = self.as_list()
 			nn = [[0.0 for i in range(4)] for j in range(4)]
 			det = determinant(m)
-			if abs(det) <= (NifFormat.EPSILON):
+			if abs(det) <= (NifFormat.EPSILON ** 4):
 				raise ZeroDivisionError('cannot invert matrix:\n%s'%self)
 			for i in range(4):
 				for j in range(4):
