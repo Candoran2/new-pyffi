@@ -60,9 +60,9 @@ class BhkPackedNiTriStripsShape:
 		data.num_vertices += len(vertices)
 		data.vertices.extend(Array(data.vertices.context, shape=len(vertices), dtype=data.vertices.dtype))
 		for vdata, v in zip(data.vertices[firstvertex:], vertices):
-			vdata.x = v[0] / 7.0
-			vdata.y = v[1] / 7.0
-			vdata.z = v[2] / 7.0
+			vdata.x = v[0] / self.context.havok_scale
+			vdata.y = v[1] / self.context.havok_scale
+			vdata.z = v[2] / self.context.havok_scale
 			
 	def get_vertex_hash_generator(
 		self,

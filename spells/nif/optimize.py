@@ -816,7 +816,7 @@ class SpellOptimizeCollisionBox(pyffi.spells.nif.NifSpell):
             vertices = shape.strips_data[0].vertices
             triangles = shape.strips_data[0].get_triangles()
             material = shape.material
-            factor = 7.0
+            factor = shape.context.havok_scale
         # check triangles
         if len(triangles) != 12:
             return None

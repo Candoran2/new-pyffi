@@ -14,7 +14,7 @@ class BhkRagdollConstraintCInfo:
 	def update_a_b(self, transform):
 		"""Update B pivot and axes from A using the given transform."""
 		# pivot point
-		pivot_b = ((7 * self.pivot_a.get_vector_3()) * transform) / 7.0
+		pivot_b = ((self.context.havok_scale * self.pivot_a.get_vector_3()) * transform) / self.context.havok_scale
 		self.pivot_b.x = pivot_b.x
 		self.pivot_b.y = pivot_b.y
 		self.pivot_b.z = pivot_b.z

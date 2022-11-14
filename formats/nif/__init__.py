@@ -222,6 +222,7 @@ class NifFile(Header):
 				else:
 					field_value = f_type.from_value(*arguments[2:4], default)
 			setattr(instance, f_name, field_value)
+		cls.update_globals(instance)
 		return instance
 
 	def read_blocks(self, stream):
@@ -328,6 +329,17 @@ class NifFile(Header):
 	# GlobalNode
 	def get_global_child_nodes(self, edge_filter=()):
 		return (root for root in self.roots)
+
+	@staticmethod
+	def update_globals(instance):
+		"""Update information after setting version and/or endianness."""
+		[basic.update_struct(instance) for basic in switchable_endianness]
+		if instance.version == 12 and instance.bs_header.bs_version >= 83:
+			# Skyrim and later
+			instance.havok_scale = 1 / 0.0142875
+		else:
+			# any other time
+			instance.havok_scale = 1 / 0.142875
 
 	@staticmethod
 	def get_string_classes(version):
@@ -486,10 +498,10 @@ class NifFile(Header):
 				instance.modification = modification
 			if field_name == "version":
 				# update every basic - we now know the version
-				[basic.update_struct(instance) for basic in switchable_endianness]
+				cls.update_globals(instance)
 			elif field_name == "endian_type":
 				# update every basic - we now know the endianness and the version
-				[basic.update_struct(instance) for basic in switchable_endianness]
+				cls.update_globals(instance)
 
 	@classmethod
 	def write_fields(cls, stream, instance):
@@ -556,7 +568,7 @@ class NifFile(Header):
 			instance.block_size[:] = [type(block).get_size(block, instance, 0, None) for block in instance.blocks]
 
 		# update the basics before doing any writing
-		[basic.update_struct(instance) for basic in switchable_endianness]
+		cls.update_globals(instance)
 		# write the header (instance)
 		logger.debug("Writing header")
 		instance.io_start = stream.tell()
