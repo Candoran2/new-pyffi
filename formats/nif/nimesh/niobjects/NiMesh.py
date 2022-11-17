@@ -1,11 +1,24 @@
 # START_GLOBALS
 from itertools import chain
+
+import generated.formats.nif as NifFormat
 # END_GLOBALS
 
 from generated.formats.nif.enums.MeshPrimitiveType import MeshPrimitiveType
 
 class NiMesh:
 # START_CLASS
+
+	def apply_scale(self, scale):
+		"""Apply scale factor on data."""
+		if abs(scale - 1.0) <= NifFormat.EPSILON: return
+		position_datas = []
+		position_datas.extend(self.geomdata_by_name("POSITION"))
+		position_datas.extend(self.geomdata_by_name("POSITION_BP"))
+		for data in position_datas:
+			for position in data:
+				for i in range(len(position)):
+					position[i] *= scale
 
 	def is_skin(self):
 		if self.has_extra_em_data:
