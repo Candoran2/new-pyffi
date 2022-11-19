@@ -72,6 +72,29 @@ class UNormInt(NifBasic.UNormClass):
 		return np.round(instance * 4294967295.0)
 
 
+class Format40(NifBasic.UNormClass):
+	"""Seems to be ushorts divided by 1000, based on EM UV map"""
+
+	storage = NifBasic.Ushort
+
+	@staticmethod
+	def from_value(value):
+		return min(max(0.0, value), 64.06158357771261)
+
+	@classmethod
+	def validate_instance(cls, instance, context=None, arg=0, template=None):
+		assert instance >= 0.0
+		assert instance <= 64.06158357771261
+
+	@staticmethod
+	def from_function(instance):
+		return instance / 1023.0
+
+	@staticmethod
+	def to_function(instance):
+		return np.round(instance * 1023.0)
+
+
 class Bitfield39(BasicBitfield):
 	c1 = BitfieldMember(pos=0, mask=0x3FF, return_type=int)
 	c2 = BitfieldMember(pos=10, mask=0xFFC00, return_type=int)
@@ -152,8 +175,8 @@ class ComponentFormat:
 			# return simple int for now
 			return NifBasic.Int
 		elif format_type == cls.F_UNKNOWN_20240.type_id:
-			# some kind of unknown two-byte-wide component type - ushort for now
-			return NifBasic.Ushort
+			# non-standard format guess based on Epic Mickey UV map.
+			return Format40
 		raise NotImplementedError
 
 	@property
