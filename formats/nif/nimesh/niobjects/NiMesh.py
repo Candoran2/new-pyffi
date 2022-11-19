@@ -19,6 +19,11 @@ class NiMesh:
 			for position in data:
 				for i in range(len(position)):
 					position[i] *= scale
+		if self.has_extra_em_data:
+			for matrix in self.extra_em_data.bone_transforms:
+				matrix.m_14 *= scale
+				matrix.m_24 *= scale
+				matrix.m_34 *= scale
 
 	def is_skin(self):
 		if self.has_extra_em_data:
