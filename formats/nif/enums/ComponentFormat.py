@@ -7,6 +7,21 @@ import generated.formats.nif.basic as NifBasic
 import generated.formats.base.basic as BaseBasic
 
 
+class NormByte(NifBasic.NormClass):
+
+	storage = BaseBasic.Byte
+
+	@staticmethod
+	def from_function(instance):
+        # function based on Epic Mickey AL_Interior_BlackBox01.nif_wii
+        # best guess - however, is not necessarily the only correct function
+		return (2 * instance + 1) / 255
+
+	@staticmethod
+	def to_function(instance):
+		return np.round(((255 * instance) - 1) / 2)
+
+
 class UNormByte(NifBasic.UNormClass):
 
 	storage = NifBasic.Byte
@@ -22,20 +37,20 @@ class UNormByte(NifBasic.UNormClass):
 
 class NormShort(NifBasic.NormClass):
 
-	storage = NifBasic.Ushort
+	storage = NifBasic.Short
 
 	@staticmethod
 	def from_function(instance):
-		return instance / 32767.5 - 1.0
+		return (2 * instance + 1) / 65535
 
 	@staticmethod
 	def to_function(instance):
-		return np.round((instance + 1) * 32767.5)
+		return np.round(((65535 * instance) - 1) / 2)
 
 
 class UNormShort(NifBasic.UNormClass):
 
-	storage = NifBasic.Byte
+	storage = NifBasic.Ushort
 
 	@staticmethod
 	def from_function(instance):
@@ -48,20 +63,20 @@ class UNormShort(NifBasic.UNormClass):
 
 class NormInt(NifBasic.NormClass):
 
-	storage = NifBasic.Ushort
+	storage = NifBasic.Int
 
 	@staticmethod
 	def from_function(instance):
-		return instance / 2147483647.5 - 1.0
+		return (2 * instance + 1) / 4294967295
 
 	@staticmethod
 	def to_function(instance):
-		return np.round((instance + 1) * 2147483647.5)
+		return np.round(((4294967295 * instance) - 1) / 2)
 
 
 class UNormInt(NifBasic.UNormClass):
 
-	storage = NifBasic.Byte
+	storage = NifBasic.Uint
 
 	@staticmethod
 	def from_function(instance):
@@ -73,7 +88,7 @@ class UNormInt(NifBasic.UNormClass):
 
 
 class Format40(NifBasic.UNormClass):
-	"""Seems to be ushorts divided by 1000, based on EM UV map"""
+	"""Seems to be ushorts divided by 1023, based on EM UV map"""
 
 	storage = NifBasic.Ushort
 
@@ -123,7 +138,7 @@ class ComponentFormat:
 			return NifBasic.Byte
 		elif cls.F_NORMINT8_1.type_id <= format_type <= cls.F_NORMINT8_4.type_id:
 			# normalized signed byte
-			return NifBasic.Normbyte
+			return NormByte
 		elif cls.F_NORMUINT8_1.type_id <= format_type <= cls.F_NORMUINT8_4.type_id:
 			# normalized unsigned byte
 			return UNormByte
