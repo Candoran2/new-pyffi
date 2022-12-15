@@ -12,6 +12,7 @@ class NiMesh:
 	def apply_scale(self, scale):
 		"""Apply scale factor on data."""
 		if abs(scale - 1.0) <= NifFormat.EPSILON: return
+		super().apply_scale(scale)
 		position_datas = []
 		position_datas.extend(self.geomdata_by_name("POSITION"))
 		position_datas.extend(self.geomdata_by_name("POSITION_BP"))
