@@ -315,7 +315,7 @@ class Bool(ve_class_from_struct(Struct('<q'), lambda value: (int(value) + 214748
 
 	@classmethod
 	def update_struct(cls, context):
-		if context.version >= 0x04000002 and context.version < 0x04010001:
+		if context.version <= 0x04000002:
 			# use int
 			cls.from_value = staticmethod(cls._int_from_value)
 			if context.endian_type:
