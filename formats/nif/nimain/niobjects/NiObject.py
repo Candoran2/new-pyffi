@@ -130,7 +130,7 @@ class NiObject:
 				elif issubclass(f_type, Ptr):
 					# can't use get_hash on the niobject in the pointer to prevent infinite recursion
 					f_hash = None
-				elif callable(getattr(f_type, "_get_attribute_list", None)):
+				elif callable(getattr(f_type, "_get_filtered_attribute_list", None)):
 					f_hash = get_struct_hash(f_type, field_value, f_args)
 				else:
 					# assume it is a basic-like, i.e. immutable objects like numbers or strings
