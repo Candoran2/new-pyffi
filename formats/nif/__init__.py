@@ -71,18 +71,19 @@ def class_post_processor(defined_class, processed_classes):
 	defined_class._has_strings = None
 	processed_classes.add(defined_class)
 	if getattr(defined_class, "_attribute_list", None) is not None:
-		fields_links = [None] * len(defined_class._attribute_list)
-		fields_refs = [None] * len(defined_class._attribute_list)
-		fields_strings = [None] * len(defined_class._attribute_list)
-		for i, (f_name, f_type, args, *_) in enumerate(defined_class._attribute_list):
+		attribute_list = defined_class._attribute_list
+		fields_links = [None] * len(attribute_list)
+		fields_refs = [None] * len(attribute_list)
+		fields_strings = [None] * len(attribute_list)
+		for i, (f_name, f_type, args, *_) in enumerate(attribute_list):
+			if isinstance(f_type, type) and issubclass(f_type, Array):
+				f_type = args[3]
 			if f_type is None:
 				# type is unknown, so you always have to check
 				fields_links[i] = True
 				fields_refs[i] = True
 				fields_strings[i] = True
 				continue
-			elif issubclass(f_type, Array):
-				f_type = args[3]
 			if not f_type in processed_classes:
 				class_post_processor(f_type, processed_classes)
 			fields_links[i] = f_type._has_links
