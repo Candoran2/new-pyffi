@@ -41,10 +41,10 @@ class StringPalette:
 			logger = logging.getLogger("generated.nif.stringpalette")
 			logger.warning(
 				f"StringPalette: no string starts at offset {offset} "
-				f"(string is {palette_bytes[offset:self.palette.find(_b00, offset)]}, "
+				f"(string is {palette_bytes[offset:palette_bytes.find(_b00, offset)]}, "
 				f"preceeding character is {self.palette[offset-1:offset]})")
 		# return the string
-		return palette_bytes[offset:palette_bytes.find(_b00, offset)]
+		return NifFormat.safe_decode(palette_bytes[offset:palette_bytes.find(_b00, offset)])
 
 	def get_all_strings(self):
 		"""Return a list of all strings.
@@ -63,7 +63,7 @@ class StringPalette:
 		>>> print(repr(pal.palette.decode("ascii")).lstrip("u"))
 		'abc\\x00def\\x00'
 		"""
-		return self.palette[:-1].split(str(_b00))
+		return [NifFormat.safe_decode(entry) for entry in self.palette[:-1].split(str(_b00))]
 
 	def add_string(self, text):
 		"""Adds string to palette (will recycle existing strings if possible) and

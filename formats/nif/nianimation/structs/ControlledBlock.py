@@ -15,25 +15,25 @@ class ControlledBlock:
 	>>> link.node_name_offset
 	0
 	>>> link.get_node_name()
-	b'Bip01'
+	'Bip01'
 	>>> link.node_name
-	b'Bip01'
+	'Bip01'
 	>>> link.set_node_name("Bip01 Tail")
 	>>> link.node_name_offset
 	6
 	>>> link.get_node_name()
-	b'Bip01 Tail'
+	'Bip01 Tail'
 	>>> link.node_name
-	b'Bip01 Tail'
+	'Bip01 Tail'
 	"""
 	def _get_string(self, offset):
 		"""A wrapper around string_palette.palette.get_string. Used by get_node_name
 		etc. Returns the string at given offset."""
 		if offset == -1:
-			return b''
+			return ''
 
 		if not self.string_palette:
-			return b''
+			return ''
 
 		return self.string_palette.palette.get_string(offset)
 
@@ -56,14 +56,14 @@ class ControlledBlock:
 		>>> palette = link.string_palette.palette
 		>>> link.node_name_offset = palette.add_string("Bip01")
 		>>> link.get_node_name()
-		b'Bip01'
+		'Bip01'
 
 		>>> # another doctest
 		>>> from pyffi.formats.nif import NifFormat
 		>>> link = NifFormat.ControllerLink()
 		>>> link.node_name = "Bip01"
 		>>> link.get_node_name()
-		b'Bip01'
+		'Bip01'
 		"""
 		# eg. ZT2
 		if self.target_name:
