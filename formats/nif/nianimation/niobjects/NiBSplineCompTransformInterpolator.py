@@ -19,8 +19,6 @@ class NiBSplineCompTransformInterpolator:
 
 	def apply_scale(self, scale):
 		"""Apply scale factor on data."""
-		self.translation.x *= scale
-		self.translation.y *= scale
-		self.translation.z *= scale
-		self.translation_bias *= scale
-		self.translation_multiplier *= scale
+		super().apply_scale(scale)
+		self.translation_offset *= scale
+		self.translation_half_range *= scale
