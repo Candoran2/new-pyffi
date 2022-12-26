@@ -37,7 +37,7 @@ class StringPalette:
 				f"StringPalette: getting string at {offset} "
 				f"but palette is only {len(palette_bytes)} long")
 		# check that a string starts at this offset
-		if offset > 0 and palette_bytes[offset-1:offset] != "\x00":
+		if offset > 0 and palette_bytes[offset-1:offset] != _b00:
 			logger = logging.getLogger("generated.nif.stringpalette")
 			logger.warning(
 				f"StringPalette: no string starts at offset {offset} "
