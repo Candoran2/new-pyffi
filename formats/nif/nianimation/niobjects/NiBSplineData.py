@@ -9,10 +9,10 @@ class NiBSplineData:
 	>>> # a doctest
 	>>> from pyffi.formats.nif import NifFormat
 	>>> block = NifFormat.NiBSplineData()
-	>>> block.num_short_control_points = 50
-	>>> block.short_control_points.update_size()
-	>>> for i in range(block.num_short_control_points):
-	...	 block.short_control_points[i] = 20 - i
+	>>> block.num_compact_control_points = 50
+	>>> block.compact_control_points.update_size()
+	>>> for i in range(block.num_compact_control_points):
+	...	 block.compact_control_points[i] = 20 - i
 	>>> list(block.get_short_data(12, 4, 3))
 	[(8, 7, 6), (5, 4, 3), (2, 1, 0), (-1, -2, -3)]
 	>>> offset = block.append_short_data([(1,2),(4,3),(13,14),(8,2),(33,33)])
@@ -38,7 +38,7 @@ class NiBSplineData:
 		use only."""
 		# check arguments
 		if not (controlpoints is self.float_control_points
-				or controlpoints is self.short_control_points):
+				or controlpoints is self.compact_control_points):
 			raise ValueError("internal error while appending data")
 		# parse the data
 		for element in range(num_elements):
@@ -60,9 +60,9 @@ class NiBSplineData:
 		if controlpoints is self.float_control_points:
 			offset = self.num_float_control_points
 			self.num_float_control_points += num_elements * element_size
-		elif controlpoints is self.short_control_points:
-			offset = self.num_short_control_points
-			self.num_short_control_points += num_elements * element_size
+		elif controlpoints is self.compact_control_points:
+			offset = self.num_compact_control_points
+			self.num_compact_control_points += num_elements * element_size
 		else:
 			raise ValueError("internal error while appending data")
 		flattened_data = itertools.chain.from_iterable(data)
@@ -79,7 +79,7 @@ class NiBSplineData:
 		:return: A list of C{num_elements} tuples of size C{element_size}.
 		"""
 		return self._getData(
-			offset, num_elements, element_size, self.short_control_points)
+			offset, num_elements, element_size, self.compact_control_points)
 
 	def get_comp_data(self, offset, num_elements, element_size, bias, multiplier):
 		"""Get an interator to the data, converted to float with extra bias and
@@ -103,7 +103,7 @@ class NiBSplineData:
 			integers. (Note: cannot be an interator; maybe this restriction
 			will be removed in a future version.)
 		:return: The offset at which the data was appended."""
-		return self._appendData(data, self.short_control_points)
+		return self._appendData(data, self.compact_control_points)
 
 	def append_comp_data(self, data):
 		"""Append data as compressed list.
@@ -128,7 +128,7 @@ class NiBSplineData:
 		for datum in data:
 			shortdata.append(tuple(int(32767 * (x - bias) / multiplier)
 								   for x in datum))
-		return (self._appendData(shortdata, self.short_control_points),
+		return (self._appendData(shortdata, self.compact_control_points),
 				bias, multiplier)
 
 	def get_float_data(self, offset, num_elements, element_size):
