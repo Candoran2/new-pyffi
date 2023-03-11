@@ -100,6 +100,14 @@ def class_post_processor(defined_class, processed_classes):
 		defined_class._has_strings = issubclass(defined_class, (String, FilePath, NiFixedString))
 	return defined_class
 
+
+def djb1_hash(type_name):
+	hash_val = 0
+	for x in type_name:
+		hash_val = ((33 * hash_val) + ord(x)) & 0xFFFFFFFF
+	return hash_val
+
+
 # filter for recognizing NIF files by extension
 # .kf are NIF files containing keyframes
 # .kfa are NIF files containing keyframes in DAoC style
@@ -123,6 +131,7 @@ processed_classes = set()
 for defined_class in classes.values():
 	class_post_processor(defined_class, processed_classes)
 niobject_map = {niclass.__name__: niclass for niclass in classes.values() if issubclass(niclass, NiObject)}
+hash_name_map = {djb1_hash(name): name for name in niobject_map.keys()}
 
 
 # exceptions
@@ -251,7 +260,12 @@ class NifFile(Header):
 			# get block name
 			if self.version >= 0x05000001:
 				# note the 0xfff mask: required for the NiPhysX blocks
-				block_type = self.block_types[self.block_type_index[block_num] & 0xfff]
+				type_index = self.block_type_index[block_num] & 0xfff
+				if self.version == 0x14030102:
+					# Fantasy Frontier and Aura Kingdom only have the NiObject type map through a hash value
+					block_type = hash_name_map[self.block_type_hashes[type_index]]
+				else:
+					block_type = self.block_types[type_index]
 				# handle data stream classes:
 				if block_type.startswith("NiDataStream\x01"):
 					block_type, data_stream_usage, data_stream_access = block_type.split("\x01")
