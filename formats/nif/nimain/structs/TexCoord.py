@@ -104,5 +104,5 @@ class TexCoord:
 
 	@staticmethod
 	def validate_instance(instance, context=None, arg=0, template=None):
-		Float.validate_instance(instance.u)
-		Float.validate_instance(instance.v)
+		name_type_map["Float"].validate_instance(instance.u)
+		name_type_map["Float"].validate_instance(instance.v)

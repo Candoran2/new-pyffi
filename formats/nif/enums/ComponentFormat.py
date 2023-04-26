@@ -224,13 +224,17 @@ class ComponentFormat:
 
 				__name__  = format_description.name
 
-				_attribute_list = [(f_name, element_type, (0, None), (False, None), None) for f_name in field_names]
+				@staticmethod
+				def _get_attribute_list():
+					for f_name in field_names:
+						yield (f_name, element_type, (0, None), (False, None), (None, None))
 
 				@staticmethod
 				def _get_filtered_attribute_list(instance, include_abstract=True):
 					for f_name in field_names:
 						yield f_name, element_type, (0, None), (False, None)
 
+			created_struct.init_attributes()
 
 			return created_struct
 

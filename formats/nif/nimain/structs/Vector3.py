@@ -203,6 +203,6 @@ class Vector3:
 
 	@staticmethod
 	def validate_instance(instance, context=None, arg=0, template=None):
-		Float.validate_instance(instance.x)
-		Float.validate_instance(instance.y)
-		Float.validate_instance(instance.z)
+		name_type_map["Float"].validate_instance(instance.x)
+		name_type_map["Float"].validate_instance(instance.y)
+		name_type_map["Float"].validate_instance(instance.z)

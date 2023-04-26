@@ -12,12 +12,12 @@ class ByteVector3(Vector3, metaclass=StructMetaClass):
 
 	@staticmethod
 	def _get_filtered_attribute_list(instance, include_abstract=True):
-		yield 'x', Normbyte, (0, None), (False, None)
-		yield 'y', Normbyte, (0, None), (False, None)
-		yield 'z', Normbyte, (0, None), (False, None)
+		yield 'x', name_type_map["Normbyte"], (0, None), (False, None)
+		yield 'y', name_type_map["Normbyte"], (0, None), (False, None)
+		yield 'z', name_type_map["Normbyte"], (0, None), (False, None)
 
 	@staticmethod
 	def validate_instance(instance, context=None, arg=0, template=None):
-		Normbyte.validate_instance(instance.x)
-		Normbyte.validate_instance(instance.y)
-		Normbyte.validate_instance(instance.z)
+		name_type_map["Normbyte"].validate_instance(instance.x)
+		name_type_map["Normbyte"].validate_instance(instance.y)
+		name_type_map["Normbyte"].validate_instance(instance.z)

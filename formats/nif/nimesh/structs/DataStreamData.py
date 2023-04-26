@@ -11,27 +11,27 @@ class DataStreamData:
 
 # START_CLASS
 
-	def __new__(cls, context, arg, template, set_default=True):
-		el_width = cls.size_from_components(template)
+	def __new__(cls, context, arg, template=None, set_default=True):
+		el_width = cls.size_from_components(arg[1])
 		if el_width == 0:
 			arr_length = 0
 		else:
-			arr_length = arg // el_width
-		return Array(context, 0, None, (arr_length,), cls.struct_from_components(template))
+			arr_length = arg[0] // el_width
+		return Array(context, 0, None, (arr_length,), cls.struct_from_components(arg[1]))
 
 	@classmethod
-	def from_stream(cls, stream, context, arg, template):
-		el_width = cls.size_from_components(template)
-		return Array.from_stream(stream, context, 0, None, (arg // el_width,), cls.struct_from_components(template))
+	def from_stream(cls, stream, context, arg, template=None):
+		el_width = cls.size_from_components(arg[1])
+		return Array.from_stream(stream, context, 0, None, (arg[0] // el_width,), cls.struct_from_components(arg[1]))
 
 	@classmethod
-	def to_stream(cls, instance, stream, context, arg, template):
-		el_width = cls.size_from_components(template)
-		return Array.to_stream(instance, stream, context, 0, None, (arg // el_width,), cls.struct_from_components(template))
+	def to_stream(cls, instance, stream, context, arg, template=None):
+		el_width = cls.size_from_components(arg[1])
+		return Array.to_stream(instance, stream, context, 0, None, (arg[0] // el_width,), cls.struct_from_components(arg[1]))
 
 	@classmethod
-	def validate_instance(cls, instance, context, arg, template):
-		assert len(instance) == arg
+	def validate_instance(cls, instance, context, arg, template=None):
+		assert len(instance) == arg[0]
 		# check the dtype later
 		# check the individual fields later
 		pass
@@ -58,12 +58,16 @@ class DataStreamData:
 
 				__name__  = str(tuple(component.__name__ for component in component_structs))
 
-				_attribute_list = [(f_name, f_type, (0, None), (False, None), None) for f_name, f_type in zip(field_names, component_structs)]
+				@staticmethod
+				def _get_attribute_list():
+					for f_name, f_type in zip(field_names, component_structs):
+						yield f_name, f_type, (0, None), (False, None), (None, None)
 
 				@staticmethod
 				def _get_filtered_attribute_list(instance, include_abstract=True):
 					for f_name, f_type in zip(field_names, component_structs):
 						yield f_name, f_type, (0, None), (False, None)
 
+			created_struct.init_attributes()
 
 			return created_struct

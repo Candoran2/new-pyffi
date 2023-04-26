@@ -1,3 +1,5 @@
+from generated.formats.nif.imports import name_type_map
+
 class Color3:
 # START_CLASS
 
@@ -17,6 +19,6 @@ class Color3:
 
 	@staticmethod
 	def validate_instance(instance, context=None, arg=0, template=None):
-		Float.validate_instance(instance.r)
-		Float.validate_instance(instance.g)
-		Float.validate_instance(instance.b)
+		name_type_map["Float"].validate_instance(instance.r)
+		name_type_map["Float"].validate_instance(instance.g)
+		name_type_map["Float"].validate_instance(instance.b)

@@ -1,5 +1,4 @@
-from generated.formats.nif.structs.SizedString import SizedString
-from generated.formats.nif.basic import NiFixedString
+from generated.formats.nif.imports import name_type_map
 
 class String:
 
@@ -11,23 +10,23 @@ class String:
 	@staticmethod
 	def from_stream(stream, context, arg=0, template=None):
 		if context.version <= 335544325:
-			return SizedString.from_stream(stream, context, 0, None)
+			return name_type_map["SizedString"].from_stream(stream, context, 0, None)
 		if context.version >= 335609859:
-			return NiFixedString.from_stream(stream, context, 0, None)
+			return name_type_map["NiFixedString"].from_stream(stream, context, 0, None)
 
 	@staticmethod
 	def to_stream(instance, stream, context, arg=0, template=None):
 		if stream.context.version <= 335544325:
-			SizedString.to_stream(instance, stream, context)
+			name_type_map["SizedString"].to_stream(instance, stream, context)
 		if stream.context.version >= 335609859:
-			NiFixedString.to_stream(instance, stream, context)
+			name_type_map["NiFixedString"].to_stream(instance, stream, context)
 
 	@staticmethod
 	def get_size(instance, context, arg=0, template=None):
 		if context.version <= 335544325:
-			return SizedString.get_size(instance, context)
+			return name_type_map["SizedString"].get_size(instance, context)
 		if context.version >= 335609859:
-			return NiFixedString.get_size(instance, context)
+			return name_type_map["NiFixedString"].get_size(instance, context)
 
 	get_field = None
 	_get_filtered_attribute_list = None
@@ -39,7 +38,7 @@ class String:
 	@classmethod
 	def validate_instance(cls, instance, context=None, arg=0, template=None):
 		# either it contained a sizedstring or it referred to one in the header
-		return SizedString.validate_instance(instance, context, 0, None)
+		return name_type_map["SizedString"].validate_instance(instance, context, 0, None)
 
 	@staticmethod
 	def from_value(value):

@@ -175,7 +175,7 @@ class Matrix33:
 	def get_scale_quat(self):
 		"""Decompose matrix into scale and quaternion."""
 		scale, rot = self.get_scale_rotation()
-		quat = NifFormat.classes.Quaternion()
+		quat = NifFormat.classes.Quaternion(self.context)
 		trace = 1.0 + rot.m_11 + rot.m_22 + rot.m_33
 
 		if trace > NifFormat.EPSILON:
@@ -328,12 +328,12 @@ class Matrix33:
 
 	@staticmethod
 	def validate_instance(instance, context=None, arg=0, template=None):
-		Float.validate_instance(instance.m_11)
-		Float.validate_instance(instance.m_12)
-		Float.validate_instance(instance.m_13)
-		Float.validate_instance(instance.m_21)
-		Float.validate_instance(instance.m_22)
-		Float.validate_instance(instance.m_23)
-		Float.validate_instance(instance.m_31)
-		Float.validate_instance(instance.m_32)
-		Float.validate_instance(instance.m_33)
+		name_type_map["Float"].validate_instance(instance.m_11)
+		name_type_map["Float"].validate_instance(instance.m_12)
+		name_type_map["Float"].validate_instance(instance.m_13)
+		name_type_map["Float"].validate_instance(instance.m_21)
+		name_type_map["Float"].validate_instance(instance.m_22)
+		name_type_map["Float"].validate_instance(instance.m_23)
+		name_type_map["Float"].validate_instance(instance.m_31)
+		name_type_map["Float"].validate_instance(instance.m_32)
+		name_type_map["Float"].validate_instance(instance.m_33)

@@ -5,6 +5,7 @@ import logging
 import os
 import re
 
+from generated.formats.nif.imports import name_type_map
 from generated.array import Array
 from generated.formats.nif.basic import Uint, FileVersion, Ulittle32, LineString, HeaderString, switchable_endianness, Ref, Ptr, NiFixedString, basic_map
 from generated.formats.nif.bsmain.structs.BSStreamHeader import BSStreamHeader
@@ -30,20 +31,8 @@ def create_niclasses_map():
 	"""Goes through the entire directory of the nif format to find all defined
 	classes and put them in a map of {local_name: class}"""
 	niclasses_map = _attr_dict()
-	current_path = os.path.dirname(os.path.abspath(__file__))
-	for dirpath, dirnames, filenames in os.walk(current_path):
-		if os.path.split(dirpath)[-1] not in ("niobjects", "structs", "bitfields", "bitflagss", "enums"):
-			continue
-		for file in filenames:
-			file, extension = os.path.splitext(file)
-			if file != "__init__" and extension == ".py":
-				rel_path = os.path.relpath(os.path.join(dirpath, file), start=current_path)
-				import_path = f".{rel_path.replace(os.path.sep, '.')}"
-				imported_module = import_module(import_path, __name__)
-				file = file.upper()
-				for key, value in vars(imported_module).items():
-					if key.upper() == file:
-						niclasses_map[key] = value
+	for name, class_object in name_type_map.items():
+		niclasses_map[name] = class_object
 	return niclasses_map
 
 

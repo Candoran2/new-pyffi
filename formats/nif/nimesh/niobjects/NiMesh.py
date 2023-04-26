@@ -4,7 +4,7 @@ from itertools import chain
 import generated.formats.nif as NifFormat
 # END_GLOBALS
 
-from generated.formats.nif.enums.MeshPrimitiveType import MeshPrimitiveType
+import name_type_map
 
 class NiMesh:
 # START_CLASS
@@ -54,11 +54,11 @@ class NiMesh:
 	def get_triangles(self):
 		triangles = self.geomdata_by_name("INDEX")
 		primitive_type = self.primitive_type
-		if primitive_type == MeshPrimitiveType.MESH_PRIMITIVE_TRIANGLES:
+		if primitive_type == name_type_map['MeshPrimitiveType'].MESH_PRIMITIVE_TRIANGLES:
 			# based on assasin.nif, the components for a triangle datastream are single indices, meant to be 
 			# interpreted three at a time, rather than the more obvious components with three ints
 			triangles = [[subtriangles[i:i + 3] for i in range(0, len(subtriangles) - 2, 3)] for subtriangles in triangles]
-		elif primitive_type == MeshPrimitiveType.MESH_PRIMITIVE_TRISTRIPS:
+		elif primitive_type == name_type_map['MeshPrimitiveType'].MESH_PRIMITIVE_TRISTRIPS:
 			# in spite of the name, Epic Mickey 2 primitive tristrips appear to be flattened normal triangles
 			triangles = [[subtriangles[i:i + 3] for i in range(0, len(subtriangles) - 2, 3)] for subtriangles in triangles]
 		else:

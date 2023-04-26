@@ -36,9 +36,9 @@ class BhkPackedNiTriStripsShape:
 		# increase number of shapes
 		num_shapes = self.num_sub_shapes
 		self.num_sub_shapes = num_shapes + 1
-		self.sub_shapes.append(HkSubPartData(self.context))
+		self.sub_shapes.append(name_type_map['HkSubPartData'](self.context))
 		data.num_sub_shapes = num_shapes + 1
-		data.sub_shapes.append(HkSubPartData(self.context))
+		data.sub_shapes.append(name_type_map['HkSubPartData'](self.context))
 		# add the shape
 		self.sub_shapes[num_shapes].layer = layer
 		self.sub_shapes[num_shapes].num_vertices = len(vertices)
