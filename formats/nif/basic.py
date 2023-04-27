@@ -162,6 +162,7 @@ Int = ve_class_from_struct(Struct("<i"), lambda value: (int(value) + 2147483648)
 Ushort = ve_class_from_struct(Struct("<H"), lambda value: int(value) % 65536, name='ushort')
 Short = ve_class_from_struct(Struct("<h"), lambda value: (int(value) + 32768) % 65536 - 32768, name='short')
 class Byte(basic.Ubyte): pass
+class Sbyte(basic.Byte): pass
 class FileVersion(Ulittle32): pass
 Float = ve_class_from_struct(Struct("<f"), float, name='float')
 Hfloat = ve_class_from_struct(Struct("<e"), float, name='hfloat')
