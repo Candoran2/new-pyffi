@@ -34,13 +34,13 @@ class NiTriStripsData:
 	def set_strips(self, strips):
 		# initialize strips array
 		self.num_strips = len(strips)
-		self.strip_lengths.update_size()
+		self.reset_field('strip_lengths')
 		numtriangles = 0
 		for i, strip in enumerate(strips):
 			self.strip_lengths[i] = len(strip)
 			numtriangles += len(strip) - 2
 		self.num_triangles = numtriangles
-		self.points.update_size()
+		self.reset_field('points')
 		self.has_points = (len(strips) > 0)
 
 		# copy strips
