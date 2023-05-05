@@ -1,5 +1,4 @@
 # START_GLOBALS
-from math import prod
 
 from generated.array import Array
 from generated.base_struct import BaseStruct
