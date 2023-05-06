@@ -33,26 +33,54 @@ class NiMesh:
 			# not sure this is the right type of semanticdata, but use for now
 			return len(self.geomdata_by_name("BONE_PALETTE")) > 0
 
-	def geomdata_by_name(self, name):
+	def geomdata_by_name(self, name, sep_datastreams=True, sep_regions=False):
 		"""Returns a list of all matching info from the nimesh datastreams. If multiple match, then they are sorted by 
-		the index"""
+		the index. Will always return a list.
+		:param name: the component name to search for
+		:type name: str
+		:param sep_datastreams: whether to return a list of all matching data separated by stream, or one single list
+		:type sep_datastreams: bool, optional"
+		:param sep_regions: whether to subdivide datastreams in lists of regions
+		:type sep_regions: bool, optional
+
+		:return: A list of the matching data, format depends on the settings
+		:rtype: list"""
 		geom_data = []
 		indices = []
 		for meshdata in self.datastreams:
 			for i, semanticdata in enumerate(meshdata.component_semantics):
 				if semanticdata.name == name:
 					indices.append(semanticdata.index)
-					datastream = meshdata.stream.data
+					datastream = meshdata.stream
+					streamdata = datastream.data
 					if meshdata.num_components == 1:
-						found_data = datastream
+						found_data = streamdata
 					else:
-						found_data = [getattr(row_struct, f"c{i}") for row_struct in datastream]
+						found_data = [getattr(row_struct, f"c{i}") for row_struct in streamdata]
+					if sep_regions == True:
+						found_data = [found_data[region.start_index:region.start_index + region.num_indices]
+									  for region in datastream.regions]
 					geom_data.append(found_data)
 		sorted_data_zip = sorted(zip(geom_data, indices), key=lambda x: x[1])
-		return [data for data, i in sorted_data_zip]
+		sorted_data = [data for data, i in sorted_data_zip]
+		if not sep_datastreams:
+			sorted_data = list(chain.from_iterable(sorted_data))
+		return sorted_data
 
 	def get_triangles(self):
-		triangles = self.geomdata_by_name("INDEX")
+		# sep_datastreams is allowed only under the assumption that there will be only one datastream containing triangles
+		vertices = []
+		vertices.extend(self.geomdata_by_name("POSITION", sep_datastreams=False, sep_regions=True))
+		vertices.extend(self.geomdata_by_name("POSITION_BP", sep_datastreams=False, sep_regions=True))
+		triangles = self.geomdata_by_name("INDEX", sep_datastreams=False, sep_regions=True)
+		# resolve the regions into indices referring to the bare vertex index (as though there are no regions)
+		offset = len(vertices[0])
+		for v_region, t_region in zip(vertices[1:], triangles[1:]):
+			# assume that every region starts where the previous ends
+			for i in range(len(t_region)):
+				t_region[i] += offset
+			offset += len(v_region)
+
 		primitive_type = self.primitive_type
 		if primitive_type == name_type_map['MeshPrimitiveType'].MESH_PRIMITIVE_TRIANGLES:
 			# based on assasin.nif, the components for a triangle datastream are single indices, meant to be 
