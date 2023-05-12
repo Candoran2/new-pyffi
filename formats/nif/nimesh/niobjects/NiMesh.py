@@ -74,7 +74,9 @@ class NiMesh:
 		vertices.extend(self.geomdata_by_name("POSITION_BP", sep_datastreams=False, sep_regions=True))
 		triangles = self.geomdata_by_name("INDEX", sep_datastreams=False, sep_regions=True)
 		# resolve the regions into indices referring to the bare vertex index (as though there are no regions)
-		offset = len(vertices[0])
+		if len(vertices) > 0:
+			# skip the first region (if it exists), because adding 0 to the index is pointless
+			offset = len(vertices[0])
 		for v_region, t_region in zip(vertices[1:], triangles[1:]):
 			# assume that every region starts where the previous ends
 			for i in range(len(t_region)):
