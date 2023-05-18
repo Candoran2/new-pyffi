@@ -1,6 +1,8 @@
 # START_GLOBALS
 from itertools import chain
 
+
+from generated.utils.tristrip import triangulate
 import generated.formats.nif as NifFormat
 # END_GLOBALS
 
@@ -83,14 +85,20 @@ class NiMesh:
 				t_region[i] += offset
 			offset += len(v_region)
 
+		def tris_from_tri_indices(indices):
+			return [[subtriangles[i:i + 3] for i in range(0, len(subtriangles) - 2, 3)] for subtriangles in indices]
+
 		primitive_type = self.primitive_type
 		if primitive_type == name_type_map['MeshPrimitiveType'].MESH_PRIMITIVE_TRIANGLES:
 			# based on assasin.nif, the components for a triangle datastream are single indices, meant to be 
 			# interpreted three at a time, rather than the more obvious components with three ints
-			triangles = [[subtriangles[i:i + 3] for i in range(0, len(subtriangles) - 2, 3)] for subtriangles in triangles]
+			triangles = tris_from_tri_indices(triangles)
 		elif primitive_type == name_type_map['MeshPrimitiveType'].MESH_PRIMITIVE_TRISTRIPS:
-			# in spite of the name, Epic Mickey 2 primitive tristrips appear to be flattened normal triangles
-			triangles = [[subtriangles[i:i + 3] for i in range(0, len(subtriangles) - 2, 3)] for subtriangles in triangles]
+			if self.context.version == 0x14060500:
+				# Epic Mickey 2 primitive tristrips appear to be flattened normal triangles
+				triangles = tris_from_tri_indices(triangles)
+			else:
+				triangles = [triangulate(triangles)]
 		else:
 			raise NotImplementedError(f"get_triangles is not implemented for primitive type {primitive_type}")
 		triangles = list(chain.from_iterable(triangles))
