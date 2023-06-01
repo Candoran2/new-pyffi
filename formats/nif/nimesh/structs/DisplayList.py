@@ -96,25 +96,23 @@ class DisplayList:
 
         total_vertex_datas = [[] for data in vertex_datas]
         triangles = []
-        total_nr_vertices = 0
+        total_vertices_map = {}
         for command, parameters in zip(self.commands, self.values):
             if command in (0x90, 0x98):
-                nr_vertices = ushort_struct.unpack(parameters[0:2])[0]
-                vertex_indices = list(range(total_nr_vertices, total_nr_vertices + nr_vertices))
-                total_nr_vertices += nr_vertices
 
+                vertex_indices = []
                 for vert_index in range(2, len(parameters), vert_length):
                     vert_bytes = parameters[vert_index:vert_index + vert_length]
                     vert_integers = [self.vert_struct.unpack(b_int.tobytes())[0] for b_int in vert_bytes.reshape((-1, self.vert_struct.size))]
-                    for i in range(4):
-                        total_vertex_datas[i].append(vertex_datas[i][vert_integers[base_info_start + i]])
-
+                    vert_integers = tuple(vert_integers[base_info_start:])
+                    if vert_integers not in total_vertices_map:
+                        total_vertices_map[vert_integers] = len(total_vertices_map)
+                        for i in range(4):
+                            total_vertex_datas[i].append(vertex_datas[i][vert_integers[i]])
+                    vertex_indices.append(total_vertices_map[vert_integers])
                 if command == 0x90:
                     triangles.extend([vertex_indices[i:i + 3] for i in range(0, len(vertex_indices) - 2, 3)])
                 else:
                     triangles.extend(triangulate([vertex_indices]))
-
-        # sanity check
-        assert all(total_nr_vertices == len(data) for data in total_vertex_datas)
 
         return total_vertex_datas, triangles
