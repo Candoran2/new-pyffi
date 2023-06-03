@@ -7,6 +7,7 @@ class ControlledBlock:
 
 
 	"""
+	[TODO] Adjust for new field names in xml.
 	>>> from pyffi.formats.nif import NifFormat
 	>>> link = NifFormat.ControlledBlock()
 	>>> link.node_name_offset

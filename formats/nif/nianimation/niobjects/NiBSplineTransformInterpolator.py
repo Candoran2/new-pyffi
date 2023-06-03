@@ -21,7 +21,7 @@ class NiBSplineTransformInterpolator:
 			offset = self.translation_handle
 			num_elements = self.basis_data.num_control_points
 			element_size = 3
-			point_types = (self.spline_data.float_control_points, self.spline_data.compact_control_points)
+			point_types = (self.spline_data.float_control_points, )
 			for controlpoints in point_types:
 				if len(controlpoints) > 0:
 					for element in range(num_elements):
