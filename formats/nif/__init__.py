@@ -288,7 +288,10 @@ class NifFile(Header):
 			try:
 				block_class = niobject_map[block_type]
 			except KeyError:
-				raise ValueError(f"Unknown block type {block_type}.")
+				error_msg = f"Unknown block type {block_type} on stream position {stream.tell()} with index {len(self.blocks)}."
+				if self.version > 0x14020007:
+					error_msg = error_msg + f" Block length is {self.block_size[block_num]}"
+				raise ValueError(error_msg)
 			logger.debug(f"Reading {block_type} block at {stream.tell()}")
 			# read the block
 			try:
@@ -308,7 +311,7 @@ class NifFile(Header):
 				if calculated_size != self.block_size[block_num]:
 					extra_size = self.block_size[block_num] - calculated_size
 					logger.error("Block size check failed: corrupt NIF file or bad nif.xml?")
-					logger.error(f"Skipping {extra_size} bytes in block [{block_index}]{block_type}")
+					logger.error(f"Skipping {extra_size} bytes in block [{block_index}]{block_type} at position {block.io_start} to {stream.tell()}")
 					# skip bytes that were missed
 					stream.seek(extra_size, 1)
 			# add block to roots if flagged as such
