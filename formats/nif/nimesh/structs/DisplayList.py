@@ -21,7 +21,7 @@ def triangles(displaylist, index):
     bytes_array = displaylist.bytes_array
     num_vertices = ushort_struct.unpack(bytes_array[index:index + 2].tobytes())[0]
     index += 2
-    index += num_vertices * displaylist.vert_struct.size * (4 + (1 if displaylist.has_weights else 0))
+    index += num_vertices * (displaylist.vert_struct.size * 4 + (2 if displaylist.has_weights else 0))
     return bytes_array[data_start:index], index
 
 def triangle_strip(displaylist, index):
@@ -67,7 +67,7 @@ class DisplayList:
 		# strategy:
 		# 1. Get mesh information (position, normal, color and UV coordinates, as well as weight information if relevant)
 		# 2. determine uint lengths (byte vs ushort, maybe vs uint?) depending on the longest mesh information array
-		# 3. Read the commands. Depending
+		# 3. Read the commands and process them. The structure will depend on whether the mesh has weights or not.
         self.has_weights = owning_nimesh.extra_em_data.has_weights
         positions = []
         positions.extend(owning_nimesh.geomdata_by_name("POSITION", False, False))
@@ -90,29 +90,58 @@ class DisplayList:
         base_info_start = 0
         if self.has_weights:
             vert_length += self.vert_struct.size
-            base_info_start = 1
+            base_info_start = 2
 
         self.read_commands()
 
         total_vertex_datas = [[] for data in vertex_datas]
         triangles = []
+        weight_indices = [] if self.has_weights else None
+        self.partition_infos = []
+
         total_vertices_map = {}
+        part_index = -1
+        building_part_info = False
         for command, parameters in zip(self.commands, self.values):
             if command in (0x90, 0x98):
-
+                building_part_info = False
+                # the list of indices into the (newly composed) vertex list for use by the triangles/tristrip
                 vertex_indices = []
+                # skip  the vertex count
                 for vert_index in range(2, len(parameters), vert_length):
                     vert_bytes = parameters[vert_index:vert_index + vert_length]
-                    vert_integers = [self.vert_struct.unpack(b_int.tobytes())[0] for b_int in vert_bytes.reshape((-1, self.vert_struct.size))]
-                    vert_integers = tuple(vert_integers[base_info_start:])
-                    if vert_integers not in total_vertices_map:
-                        total_vertices_map[vert_integers] = len(total_vertices_map)
+                    # convert the vertex bytes to information
+                    vert_integers = [self.vert_struct.unpack(b_int.tobytes())[0] for b_int in vert_bytes[base_info_start:].reshape((-1, self.vert_struct.size))]
+                    if self.has_weights:
+                        vert_key = (part_index, vert_bytes[0], vert_bytes[1], *vert_integers)
+                    else:
+                        vert_key = tuple(vert_integers)
+                    if vert_key not in total_vertices_map:
+                        total_vertices_map[vert_key] = len(total_vertices_map)
+                        # if this is a new vertex, assemble its information from the indices into position, normal, color and uv
                         for i in range(4):
                             total_vertex_datas[i].append(vertex_datas[i][vert_integers[i]])
-                    vertex_indices.append(total_vertices_map[vert_integers])
+                        if self.has_weights:
+                            try:
+                                weight_indices.append(self.partition_infos[-1][0x20][vert_key[1] // 3])
+                            except IndexError:
+                                print(f"key {vert_key[1]} not found in {self.partition_infos[0x20]}")
+                                raise
+                    vertex_indices.append(total_vertices_map[vert_key])
                 if command == 0x90:
                     triangles.extend([vertex_indices[i:i + 3] for i in range(0, len(vertex_indices) - 2, 3)])
                 else:
                     triangles.extend(triangulate([vertex_indices]))
+            elif command in (0x20, 0x28, 0x84, 0xB0):
+                if building_part_info == False:
+                    # starting a new partition
+                    self.partition_infos.append({0x20: [], 0x28: [], 0x84: [], 0xB0: []})
+                    building_part_info = True
+                    part_index += 1
+                if command in (0x20, 0x28):
+                    value = ushort_struct.unpack(parameters.tobytes())[0]
+                elif command in (0x84, 0xB0):
+                    value = parameters[0]
+                self.partition_infos[-1][command].append(value)
 
-        return total_vertex_datas, triangles
+        return total_vertex_datas, triangles, weight_indices
