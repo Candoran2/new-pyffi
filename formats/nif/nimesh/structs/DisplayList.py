@@ -21,7 +21,7 @@ def triangles(displaylist, index):
     bytes_array = displaylist.bytes_array
     num_vertices = ushort_struct.unpack(bytes_array[index:index + 2].tobytes())[0]
     index += 2
-    index += num_vertices * (displaylist.vert_struct.size * 4 + (2 if displaylist.has_weights else 0))
+    index += num_vertices * displaylist.vert_length
     return bytes_array[data_start:index], index
 
 def triangle_strip(displaylist, index):
@@ -76,8 +76,8 @@ class DisplayList:
         normals.extend(owning_nimesh.geomdata_by_name("NORMAL", False, False))
         normals.extend(owning_nimesh.geomdata_by_name("NORMAL_BP", False, False))
         colors = owning_nimesh.geomdata_by_name("COLOR", False, False)
-        UVs = owning_nimesh.geomdata_by_name("TEXCOORD", False, False)
-        vertex_datas = [positions, normals, colors, UVs]
+        UVs = owning_nimesh.geomdata_by_name("TEXCOORD", True, False)
+        vertex_datas = [positions, normals, colors, *UVs]
 
         max_len = max(len(data) for data in vertex_datas)
         if max_len < 256:
@@ -86,10 +86,10 @@ class DisplayList:
             self.vert_struct = Struct('>H')
         else:
             self.vert_struct = Struct('>I')
-        vert_length = self.vert_struct.size * 4
+        self.vert_length = self.vert_struct.size * len(vertex_datas)
         base_info_start = 0
         if self.has_weights:
-            vert_length += self.vert_struct.size
+            self.vert_length += self.vert_struct.size
             base_info_start = 2
 
         self.read_commands()
@@ -108,8 +108,8 @@ class DisplayList:
                 # the list of indices into the (newly composed) vertex list for use by the triangles/tristrip
                 vertex_indices = []
                 # skip  the vertex count
-                for vert_index in range(2, len(parameters), vert_length):
-                    vert_bytes = parameters[vert_index:vert_index + vert_length]
+                for vert_index in range(2, len(parameters), self.vert_length):
+                    vert_bytes = parameters[vert_index:vert_index + self.vert_length]
                     # convert the vertex bytes to information
                     vert_integers = [self.vert_struct.unpack(b_int.tobytes())[0] for b_int in vert_bytes[base_info_start:].reshape((-1, self.vert_struct.size))]
                     if self.has_weights:
@@ -119,7 +119,7 @@ class DisplayList:
                     if vert_key not in total_vertices_map:
                         total_vertices_map[vert_key] = len(total_vertices_map)
                         # if this is a new vertex, assemble its information from the indices into position, normal, color and uv
-                        for i in range(4):
+                        for i in range(len(vert_integers)):
                             total_vertex_datas[i].append(vertex_datas[i][vert_integers[i]])
                         if self.has_weights:
                             try:
@@ -143,5 +143,7 @@ class DisplayList:
                 elif command in (0x84, 0xB0):
                     value = parameters[0]
                 self.partition_infos[-1][command].append(value)
+
+        total_vertex_datas = [*total_vertex_datas[:3], total_vertex_datas[3:]]
 
         return total_vertex_datas, triangles, weight_indices
