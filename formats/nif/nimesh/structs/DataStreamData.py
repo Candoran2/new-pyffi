@@ -1,3 +1,4 @@
+from generated.formats.nif.imports import name_type_map
 # START_GLOBALS
 
 from generated.array import Array
@@ -28,9 +29,13 @@ class DataStreamData:
 		el_width = cls.size_from_components(arg[1])
 		return Array.to_stream(instance, stream, context, 0, None, (arg[0] // el_width,), cls.struct_from_components(arg[1]))
 
+	@staticmethod
+	def get_size(instance, context, arg=0, template=None):
+		return arg[0]
+
 	@classmethod
 	def validate_instance(cls, instance, context, arg, template=None):
-		assert len(instance) == arg[0]
+		assert len(instance) == arg[0] // cls.size_from_components(arg[1])
 		# check the dtype later
 		# check the individual fields later
 		pass
