@@ -88,9 +88,9 @@ class UNormInt(NifBasic.UNormClass):
 
 
 class Format40(NifBasic.UNormClass):
-	"""Seems to be ushorts divided by 1023, based on EM UV map"""
+	"""Seems to be shorts divided by 1023, based on EM UV map"""
 
-	storage = NifBasic.Ushort
+	storage = NifBasic.Short
 
 	@staticmethod
 	def from_value(value):
