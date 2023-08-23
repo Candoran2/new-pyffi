@@ -71,7 +71,8 @@ class NiGeometry:
 
 	def get_triangles(self):
 		"""Returns the triangles that describe its mesh information, either from its data or its skin"""
-		if self.is_skin():
+		triangles = self.data.get_triangles()
+		if len(triangles) == 0 and self.is_skin():
 			skin_partition = self.get_skin_partition()
 			if skin_partition:
 				if skin_partition.partitions:
@@ -79,8 +80,7 @@ class NiGeometry:
 						triangles = []
 						for partition in skin_partition.partitions:
 							triangles += list(partition.get_mapped_triangles())
-						return triangles
-		return self.data.get_triangles()
+		return triangles
 
 	def _validate_skin(self):
 		"""Check that skinning blocks are valid. Will raise NifError exception
