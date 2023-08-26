@@ -164,7 +164,12 @@ class NifFile(Header):
 			h_ver, modification = HeaderString.version_modification_from_headerstring(header_string)
 			if h_ver <= 0x03010000:
 				LineString.from_stream(stream)
-			ver_int = FileVersion.from_stream(stream)
+				LineString.from_stream(stream)
+				LineString.from_stream(stream)
+			if h_ver < 0x03010001:
+				ver_int = h_ver
+			else:
+				ver_int = FileVersion.from_stream(stream)
 			# special case for Laxe Lore
 			if h_ver == 0x14000004 and ver_int == 0x5A000004:
 				modification = "laxelore"
@@ -228,6 +233,8 @@ class NifFile(Header):
 		logger = logging.getLogger("generated.formats.nif")
 		self.roots = []
 		self.blocks = []
+		self._block_dct = {}
+
 		block_num = 0
 		while True:
 			if self.version < 0x0303000D:
@@ -303,6 +310,7 @@ class NifFile(Header):
 			if block_type == "NiDataStream":
 				block.usage = DataStreamUsage.from_value(data_stream_usage)
 				block.access = DataStreamAccess.from_value(data_stream_access)
+			self._block_dct[block_index] = block
 			self.blocks.append(block)
 			# check block size
 			if self.version > 0x14020007:
@@ -418,10 +426,25 @@ class NifFile(Header):
 			for parent_type, parent_instance, attribute in self.get_condition_attributes_recursive(type(block), block, is_ref, enter_condition=field_has_links):
 				block_index = parent_type.get_field(parent_instance, attribute[0])
 				if isinstance(block_index, int):
-					if block_index >= 0:
-						resolved_ref = self.blocks[block_index]
+					if self.version >= 0x0303000D:
+						if block_index == -1:
+							resolved_ref = None
+						else:
+							try:
+								resolved_ref = self.blocks[block_index]
+							except IndexError:
+								raise IndexError(f"block index {block_index} exceeds limit {len(self.blocks)} of block list."
+						               f"Field '{attribute[0]}' of {parent_type} in block {self.blocks.index(block)}")
 					else:
-						resolved_ref = None
+						if block_index == 0:
+							resolved_ref = None
+						else:
+							try:
+								resolved_ref = self._block_dct[block_index]
+							except KeyError:
+								raise IndexError(f"block index {block_index} not found in block map {list(self._block_dct.keys())}."
+						               f"Field '{attribute[0]}' of {parent_type} in block {self.blocks.index(block)}")
+
 					parent_type.set_field(parent_instance, attribute[0], resolved_ref)
 
 	def _makeBlockList(self, root, block_index_dct, block_type_list, block_type_dct):
@@ -503,6 +526,7 @@ class NifFile(Header):
 				ver, modification = HeaderString.version_modification_from_headerstring(field_value)
 				instance.version = ver
 				instance.modification = modification
+				cls.update_globals(instance)
 			if field_name == "version":
 				# update every basic - we now know the version
 				cls.update_globals(instance)
