@@ -274,6 +274,7 @@ class UNormClass:
 		instance = cls.to_function(instance).astype(cls.storage.np_type)
 		cls.storage.write_array(stream, instance)
 
+
 class NormClass(UNormClass):
 
 	@staticmethod
@@ -286,6 +287,7 @@ class NormClass(UNormClass):
 		assert instance >= -1.0
 		assert instance <= 1.0
 
+
 class Normbyte(NormClass):
 
 	storage = Byte
@@ -297,6 +299,19 @@ class Normbyte(NormClass):
 	@staticmethod
 	def to_function(instance):
 		return np.round((instance + 1) * 127.5)
+
+
+class Normsbyte(NormClass):
+
+	storage = Sbyte
+
+	@staticmethod
+	def from_function(instance):
+		return (2 * instance + 1) / 255
+
+	@staticmethod
+	def to_function(instance):
+		return np.round(((255 * instance) - 1) / 2)
 
 
 class BlockTypeIndex(Short): pass
@@ -413,6 +428,9 @@ class HeaderString(LineString):
 		elif s.startswith("Joymaster HS1 Object Format - (JMI), Version "):
 			version_str = s[45:]
 			modification = "jmihs1"
+		elif s == 'Gamebryo File Format':
+			# Aura Kingdom sometimes has a header string without the ', Version x.x.x.x' part.
+			version_str = "20.3.1.2"
 		else:
 			raise ValueError("Not a NIF file.")
 		try:
