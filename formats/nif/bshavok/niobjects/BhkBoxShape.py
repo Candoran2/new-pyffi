@@ -8,6 +8,7 @@ class BhkBoxShape:
 
 	def apply_scale(self, scale):
 		"""Apply scale factor C{scale} on data."""
+		super().apply_scale(scale)
 		# apply scale on dimensions
 		self.dimensions.x *= scale
 		self.dimensions.y *= scale

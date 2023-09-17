@@ -15,6 +15,7 @@ class NiBSplineTransformInterpolator:
 
 	def apply_scale(self, scale):
 		"""Apply scale factor on data."""
+		super().apply_scale(scale)
 		self.transform.apply_scale(scale)
 		# also scale translation float keys
 		if self.translation_handle != 65535:

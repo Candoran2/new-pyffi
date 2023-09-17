@@ -9,6 +9,7 @@ class HkPackedNiTriStripsData:
 		"""Apply scale factor on data."""
 		if abs(scale - 1.0) <= NifFormat.EPSILON:
 			return
+		super().apply_scale(scale)
 		for vert in self.vertices:
 			vert.x *= scale
 			vert.y *= scale

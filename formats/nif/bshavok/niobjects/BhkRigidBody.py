@@ -3,6 +3,7 @@ class BhkRigidBody:
 
 	def apply_scale(self, scale):
 		"""Apply scale factor <scale> on data."""
+		super().apply_scale(scale)
 		# apply scale on transform
 		self.rigid_body_info.translation.x *= scale
 		self.rigid_body_info.translation.y *= scale

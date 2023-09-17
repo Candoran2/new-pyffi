@@ -38,4 +38,5 @@ class BhkConstraint:
 
 	def apply_scale(self, scale):
 		"""Scale data."""
+		super().apply_scale(scale)
 		self.constraint.apply_scale(scale)

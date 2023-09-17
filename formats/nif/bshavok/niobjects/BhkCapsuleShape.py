@@ -9,6 +9,7 @@ class BhkCapsuleShape:
 
 	def apply_scale(self, scale):
 		"""Apply scale factor <scale> on data."""
+		super().apply_scale(scale)
 		# apply scale on dimensions
 		self.radius *= scale
 		self.radius_1 *= scale

@@ -3,6 +3,7 @@ class BSBound:
 
 	def apply_scale(self, scale):
 		"""Scale data."""
+		super().apply_scale(scale)
 		self.center.x *= scale
 		self.center.y *= scale
 		self.center.z *= scale

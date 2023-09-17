@@ -8,6 +8,7 @@ class BhkTransformShape:
 
 	def apply_scale(self, scale):
 		"""Apply scale factor <scale> on data."""
+		super().apply_scale(scale)
 		# apply scale on translation
 		self.transform.m_14 *= scale
 		self.transform.m_24 *= scale

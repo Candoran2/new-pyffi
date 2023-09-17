@@ -2,6 +2,7 @@ class NiKeyframeData:
 # START_CLASS
 	def apply_scale(self, scale):
 		"""Apply scale factor on data."""
+		super().apply_scale(scale)
 		for key in self.translations.keys:
 			key.value.x *= scale
 			key.value.y *= scale

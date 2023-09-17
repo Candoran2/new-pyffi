@@ -123,6 +123,7 @@ class NiAVObject:
 		"""Apply scale factor on data.
 
 		:param scale: The scale factor."""
+		super().apply_scale(scale)
 		# apply scale on translation
 		self.translation.x *= scale
 		self.translation.y *= scale

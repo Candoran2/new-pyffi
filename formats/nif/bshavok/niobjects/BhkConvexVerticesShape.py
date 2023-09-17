@@ -11,6 +11,7 @@ class BhkConvexVerticesShape:
 	def apply_scale(self, scale):
 		"""Apply scale factor on data."""
 		if abs(scale - 1.0) <= NifFormat.EPSILON: return
+		super().apply_scale(scale)
 		for v in self.vertices:
 			v.x *= scale
 			v.y *= scale

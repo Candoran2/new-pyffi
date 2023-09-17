@@ -8,6 +8,7 @@ class BhkSphereShape:
 
 	def apply_scale(self, scale):
 		"""Apply scale factor <scale> on data."""
+		super().apply_scale(scale)
 		# apply scale on dimensions
 		self.radius *= scale
 
