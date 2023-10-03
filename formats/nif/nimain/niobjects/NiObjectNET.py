@@ -11,8 +11,7 @@ class NiObjectNET:
 		# add to the list
 		num_extra = self.num_extra_data_list
 		self.num_extra_data_list = num_extra + 1
-		self.reset_field("extra_data_list")
-		self.extra_data_list[num_extra] = extrablock
+		self.extra_data_list.append(extrablock)
 		# add to the chain
 		if not self.extra_data:
 			self.extra_data = extrablock
