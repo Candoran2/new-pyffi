@@ -5,9 +5,46 @@ import generated.formats.nif as NifFormat
 class BSTriShape:
 # START_CLASS
 
+	def update_center_radius(self):
+		"""Recalculate center and radius of the data."""
+		# in case there are no vertices, set center and radius to zero
+		if len(self.vertex_data) == 0:
+			self.bounding_sphere.center.x = 0.0
+			self.bounding_sphere.center.y = 0.0
+			self.bounding_sphere.center.z = 0.0
+			self.bounding_sphere.radius = 0.0
+			return
+
+		vertices = [data.vertex for data in self.vertex_data]
+		# find extreme values in x, y, and z direction
+		lowx = min([v.x for v in vertices])
+		lowy = min([v.y for v in vertices])
+		lowz = min([v.z for v in vertices])
+		highx = max([v.x for v in vertices])
+		highy = max([v.y for v in vertices])
+		highz = max([v.z for v in vertices])
+
+		# center is in the center of the bounding box
+		cx = (lowx + highx) * 0.5
+		cy = (lowy + highy) * 0.5
+		cz = (lowz + highz) * 0.5
+		self.bounding_sphere.center.x = cx
+		self.bounding_sphere.center.y = cy
+		self.bounding_sphere.center.z = cz
+
+		# radius is the largest distance from the center
+		r2 = 0.0
+		for v in vertices:
+			dx = cx - v.x
+			dy = cy - v.y
+			dz = cz - v.z
+			r2 = max(r2, dx*dx+dy*dy+dz*dz)
+		self.bounding_sphere.radius = r2 ** 0.5
+
 	def apply_scale(self, scale):
 		if abs(scale - 1.0) <= NifFormat.EPSILON: return
 		super().apply_scale(scale)
+		self.bounding_sphere.apply_scale(scale)
 		for v_data in self.vertex_data:
 			v = v_data.vertex
 			v.x *= scale
