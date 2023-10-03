@@ -236,7 +236,7 @@ class UNormClass:
 
 	@classmethod
 	def get_size(cls, instance, context, arg=0, template=None):
-		return cls.storage.get_size(cls.to_function(instance))
+		return cls.storage.get_size(cls.to_function(instance), context, arg, template)
 
 	@staticmethod
 	def from_value(value):
