@@ -358,7 +358,7 @@ class NifFile(Header):
 
 	@staticmethod
 	def get_string_classes(version):
-		if version > 0x14010003:
+		if version >= 0x14010003:
 			return (String, FilePath, NiFixedString)
 		else:
 			return (NiFixedString,)
