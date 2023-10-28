@@ -63,7 +63,7 @@ class DisplayList:
         self.commands = commands
         self.values = values
 
-    def create_mesh_data(self, owning_nimesh):
+    def extract_mesh_data(self, owning_nimesh):
 		# strategy:
 		# 1. Get mesh information (position, normal, color and UV coordinates, as well as weight information if relevant)
 		# 2. determine uint lengths (byte vs ushort, maybe vs uint?) depending on the longest mesh information array
