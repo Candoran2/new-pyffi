@@ -349,7 +349,7 @@ class NifFile(Header):
 	def update_globals(instance):
 		"""Update information after setting version and/or endianness."""
 		[basic.update_struct(instance) for basic in switchable_endianness]
-		if instance.version == 12 and instance.bs_header.bs_version >= 83:
+		if instance.version == 0x14020007 and instance.user_version == 12 and instance.bs_header.bs_version >= 83:
 			# Skyrim and later
 			instance.havok_scale = 1 / 0.0142875
 		else:
@@ -527,11 +527,9 @@ class NifFile(Header):
 				instance.version = ver
 				instance.modification = modification
 				cls.update_globals(instance)
-			if field_name == "version":
-				# update every basic - we now know the version
-				cls.update_globals(instance)
-			elif field_name == "endian_type":
-				# update every basic - we now know the endianness and the version
+			if field_name in {"version", "endian_type", "user_version", "bs_header"}:
+				# update every basic and other important constants - these fields are used in determining how basics
+				# are read and other important settings
 				cls.update_globals(instance)
 
 	@classmethod
