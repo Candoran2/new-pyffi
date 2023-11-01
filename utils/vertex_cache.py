@@ -219,7 +219,7 @@ class Mesh:
         self.vertex_infos = []
         self.triangle_infos = []
         # add all vertices
-        if triangles:
+        if len(triangles) > 0:
             num_vertices = max(max(verts) for verts in triangles) + 1
         else:
             num_vertices = 0
